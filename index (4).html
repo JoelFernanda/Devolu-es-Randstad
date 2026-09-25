@@ -1,0 +1,3412 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#2175D9"/>
+<title>Randstad · Devoluções</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<style>
+  :root{
+    --bg:#f5f7fb;--surface:#ffffff;--line:#e4e8f0;--line-2:#d4dae5;
+    --text:#0f1222;--text-2:#2a3142;--muted:#6b7280;--muted-2:#9aa1ad;
+    --r-azul:#2175D9;--r-azul-2:#1a5fb8;--r-azul-3:#3d8ee8;
+    --r-azul-soft:#eef4fc;--r-azul-line:#d0e2f7;
+    --r-azul-4:#0F1941;
+    --r-ciano:#009ee0;
+    --ok:#0f7b3f;--ok-soft:#e6f6ec;
+    --warn:#b07600;--warn-soft:#fdf3d8;
+    --danger:#b42318;--danger-soft:#fdeceb;
+    --roxo:#6d28d9;--laranja:#ea580c;
+    --radius:14px;
+    --shadow-sm:0 1px 2px rgba(15,18,34,.04), 0 1px 3px rgba(15,18,34,.03);
+    --shadow-md:0 4px 16px rgba(33,117,217,.07), 0 2px 6px rgba(15,18,34,.04);
+    --shadow-lg:0 16px 48px rgba(33,117,217,.14), 0 4px 12px rgba(15,18,34,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(1200px 600px at 100% -10%, #e6eefa 0%, transparent 60%),
+               radial-gradient(1000px 500px at -10% 110%, #e9f0fc 0%, transparent 55%),
+               var(--bg);
+    color:var(--text);font-size:15px;line-height:1.5;
+    -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;
+    min-height:100vh;
+  }
+  button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  input,select,textarea{font:inherit;color:inherit}
+  a{color:inherit;text-decoration:none}
+  ::selection{background:var(--r-azul-soft)}
+
+  .rocket-icon{display:inline-block;vertical-align:middle;flex-shrink:0;
+    filter:drop-shadow(0 3px 8px rgba(33,117,217,.35));}
+  .rocket-icon.sm{width:22px;height:22px;filter:drop-shadow(0 2px 4px rgba(33,117,217,.28))}
+  .rocket-icon.md{width:32px;height:32px}
+  .rocket-icon.lg{width:64px;height:64px}
+  .rocket-icon.xl{width:110px;height:110px;filter:drop-shadow(0 12px 32px rgba(33,117,217,.5))}
+
+  #splash{
+    position:fixed;inset:0;z-index:2000;
+    background:linear-gradient(160deg,#0F1941 0%,#123A8A 45%,#2175D9 100%);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    overflow:hidden;transition:opacity .5s ease, visibility .5s ease;padding:20px;
+  }
+  #splash.hide{opacity:0;visibility:hidden;pointer-events:none}
+  #splash .stars{position:absolute;inset:0;overflow:hidden}
+  #splash .stars span{
+    position:absolute;width:2px;height:2px;border-radius:50%;
+    background:#fff;opacity:.6;animation:twinkle 2s infinite ease-in-out;
+  }
+  @keyframes twinkle{0%,100%{opacity:.2;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+  #splash .rocket-wrap{position:relative;z-index:2;animation:rocketFloat 2s ease-in-out infinite;margin-bottom:24px}
+  @keyframes rocketFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+  #splash .flame{animation:flame .3s infinite alternate ease-in-out;transform-origin:center top}
+  @keyframes flame{0%{transform:scaleY(.85) scaleX(.95)}100%{transform:scaleY(1.15) scaleX(1.05)}}
+  #splash .frase{
+    color:#fff;font-size:22px;font-weight:700;letter-spacing:-.02em;
+    text-align:center;z-index:2;animation:fadeUp .6s ease both .2s;
+    padding:0 20px;line-height:1.3;
+  }
+  #splash .frase span{
+    display:block;font-size:13px;font-weight:500;letter-spacing:.15em;
+    text-transform:uppercase;opacity:.7;margin-top:10px;
+  }
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)}}
+  #splash .bar{width:180px;height:3px;background:rgba(255,255,255,.18);border-radius:10px;margin-top:30px;overflow:hidden;z-index:2}
+  #splash .bar i{display:block;height:100%;width:0%;background:linear-gradient(90deg,#3d8ee8,#009ee0,#fff);border-radius:10px;animation:progressBar 2s cubic-bezier(.4,0,.2,1) forwards}
+  @keyframes progressBar{from{width:0%} to{width:100%}}
+  #splash::before{
+    content:'';position:absolute;top:20%;left:50%;transform:translateX(-50%);
+    width:600px;height:600px;border-radius:50%;
+    background:radial-gradient(circle,rgba(61,142,232,.35) 0%,transparent 60%);
+    animation:pulse 2.5s infinite ease-in-out;
+  }
+  @keyframes pulse{0%,100%{opacity:.5;transform:translateX(-50%) scale(1)}50%{opacity:.9;transform:translateX(-50%) scale(1.15)}}
+
+  #login{
+    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:
+      radial-gradient(900px 500px at 90% -10%, rgba(61,142,232,.18), transparent 60%),
+      radial-gradient(800px 500px at -10% 110%, rgba(15,25,65,.16), transparent 60%),
+      linear-gradient(180deg,#ffffff 0%,#f5f8fd 100%);
+    padding:20px;overflow-y:auto;
+  }
+  #login::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:280px;
+    background:linear-gradient(135deg,#0F1941 0%,#2175D9 60%,#3d8ee8 100%);
+    border-radius:0 0 50% 50% / 0 0 30% 30%;z-index:0;
+  }
+  #login::after{
+    content:'';position:absolute;top:0;left:0;right:0;height:280px;
+    background-image:radial-gradient(circle at 20% 30%, rgba(255,255,255,.6) 1px, transparent 2px),
+                     radial-gradient(circle at 70% 20%, rgba(255,255,255,.4) 1px, transparent 2px),
+                     radial-gradient(circle at 40% 70%, rgba(255,255,255,.5) 1px, transparent 2px),
+                     radial-gradient(circle at 85% 60%, rgba(255,255,255,.3) 1px, transparent 2px);
+    background-size:200px 200px;z-index:0;pointer-events:none;
+  }
+  #login .box{width:100%;max-width:420px;position:relative;z-index:1;margin-top:50px}
+  #login .brandmark{display:flex;flex-direction:column;align-items:center;gap:14px;margin-bottom:26px}
+  #login .brandmark .rocket-icon{animation:rocketFloat 3s ease-in-out infinite}
+  #login .brandmark .t{font-weight:700;letter-spacing:-.015em;font-size:15px;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.15)}
+  #login h1{font-size:26px;font-weight:700;letter-spacing:-.03em;margin-bottom:8px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.15);text-align:center}
+  #login p.sub{color:rgba(255,255,255,.85);font-size:14px;margin-bottom:32px;text-shadow:0 1px 6px rgba(0,0,0,.1);text-align:center}
+  #login .form-card{
+    background:#fff;border-radius:20px;padding:28px 24px 26px;
+    box-shadow:0 20px 60px rgba(15,25,65,.16), 0 8px 24px rgba(33,117,217,.08);
+  }
+  #login .form-card h2{font-size:17px;font-weight:700;color:var(--r-azul-4);margin-bottom:4px;letter-spacing:-.01em}
+  #login .form-card .desc{font-size:13px;color:var(--muted);margin-bottom:22px}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:6px;font-weight:600;letter-spacing:.02em}
+  .input{width:100%;padding:13px 14px;border:1.5px solid var(--line-2);background:var(--surface);border-radius:11px;transition:.15s;font-size:15px}
+  .input:focus{outline:none;border-color:var(--r-azul);box-shadow:0 0 0 4px var(--r-azul-soft)}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    padding:12px 18px;border-radius:12px;font-size:14px;font-weight:600;
+    background:linear-gradient(135deg,#0F1941,#2175D9 60%,#3d8ee8);
+    color:#fff;transition:.15s;border:none;
+    box-shadow:0 6px 18px rgba(33,117,217,.28);letter-spacing:.005em;
+  }
+  .btn:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 8px 24px rgba(33,117,217,.4)}
+  .btn:active{transform:translateY(0)}
+  .btn.ghost{background:var(--surface);color:var(--text);border:1px solid var(--line-2);box-shadow:var(--shadow-sm)}
+  .btn.ghost:hover{background:#f4f6fa;border-color:var(--line);filter:none;transform:none}
+  .btn.ok{background:linear-gradient(135deg,#0f7b3f,#12a150);box-shadow:0 4px 12px rgba(15,123,63,.3)}
+  .btn.danger{background:linear-gradient(135deg,#b42318,#dc2626);color:#fff;border:none;box-shadow:0 4px 12px rgba(180,35,24,.28)}
+  .btn.danger:hover{filter:brightness(1.08);transform:translateY(-1px)}
+  .btn.warn{background:linear-gradient(135deg,#b07600,#eab308);box-shadow:0 4px 12px rgba(176,118,0,.28)}
+  .btn.roxo{background:linear-gradient(135deg,#6d28d9,#8b5cf6);box-shadow:0 4px 12px rgba(109,40,217,.28)}
+  .btn.zap{background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 4px 12px rgba(22,163,74,.28)}
+  .btn.mail{background:linear-gradient(135deg,#0F1941,#2175D9)}
+  .btn.primary{background:linear-gradient(135deg,#0F1941,#2175D9 60%,#3d8ee8);box-shadow:0 6px 18px rgba(33,117,217,.4)}
+  .btn.primary:hover{filter:brightness(1.12);box-shadow:0 10px 28px rgba(33,117,217,.5)}
+  .btn.sm{padding:8px 13px;font-size:13px;border-radius:9px}
+  .btn.lg{padding:14px 22px;font-size:15px;border-radius:12px}
+  .btn.full{width:100%}
+  .btn.xs{padding:6px 10px;font-size:12px;border-radius:8px}
+
+  .hint{font-size:12.5px;color:var(--muted-2);line-height:2}
+  .hint b{color:var(--muted);font-weight:600}
+  .erro{background:var(--danger-soft);color:var(--danger);border:1px solid #f3c9c6;
+    padding:10px 12px;border-radius:10px;font-size:13px;margin-bottom:14px;display:none;}
+  .creds-hint{margin-top:20px;text-align:center;font-size:12px;color:var(--muted-2);line-height:1.9}
+  .creds-hint b{color:var(--muted);font-weight:600}
+  .link-colab{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    text-align:center;margin-top:16px;
+    font-size:13.5px;color:var(--r-azul);font-weight:700;
+    padding:14px;border-radius:12px;transition:.15s;
+    background:linear-gradient(135deg,#eef4fc,#e0ecfb);
+    border:1.5px solid var(--r-azul-line);
+    cursor:pointer;
+  }
+  .link-colab:hover{background:linear-gradient(135deg,#e0ecfb,#d0e2f7);transform:translateY(-1px);box-shadow:var(--shadow-md)}
+
+  .hidden{display:none!important}
+
+  header.app{
+    background:rgba(255,255,255,.9);
+    backdrop-filter:saturate(180%) blur(14px);-webkit-backdrop-filter:saturate(180%) blur(14px);
+    border-bottom:1px solid var(--line);padding:0 20px;height:64px;
+    display:flex;align-items:center;justify-content:space-between;
+    position:sticky;top:0;z-index:50;box-shadow:0 1px 0 rgba(33,117,217,.04);
+  }
+  header.app .left{display:flex;align-items:center;gap:12px;min-width:0}
+  header.app .left .rocket-icon{animation:rocketFloat 3s ease-in-out infinite}
+  header.app .title{
+    font-weight:700;font-size:14.5px;letter-spacing:-.015em;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--r-azul-4);
+    display:flex;flex-direction:column;line-height:1.15;
+  }
+  header.app .title small{font-size:10.5px;color:var(--muted);font-weight:500;letter-spacing:.04em;text-transform:uppercase}
+  header.app .right{display:flex;align-items:center;gap:12px;font-size:13.5px;color:var(--muted)}
+  header.app .right .user{display:flex;align-items:center;gap:9px;min-width:0}
+  header.app .right .uname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px;font-weight:500;color:var(--text-2)}
+  header.app .right .avatar{
+    width:32px;height:32px;border-radius:50%;
+    background:linear-gradient(135deg,#0F1941,#2175D9);
+    color:#fff;font-weight:700;font-size:12px;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    box-shadow:0 3px 10px rgba(33,117,217,.3);border:2px solid #fff;
+    position:relative;
+  }
+  header.app .right .avatar::after{
+    content:'';position:absolute;inset:-2px;border-radius:50%;
+    background:linear-gradient(135deg,#2175D9,#009ee0);z-index:-1;
+  }
+  header.app .right button{color:var(--muted);font-size:13.5px;padding:6px 10px;border-radius:8px;transition:.15s}
+  header.app .right button:hover{color:var(--danger);background:var(--danger-soft)}
+
+  nav.tabs{
+    background:rgba(255,255,255,.9);
+    backdrop-filter:saturate(180%) blur(14px);-webkit-backdrop-filter:saturate(180%) blur(14px);
+    border-bottom:1px solid var(--line);padding:12px 20px;display:flex;gap:10px;overflow-x:auto;
+    position:sticky;top:64px;z-index:49;
+    scrollbar-width:none;-ms-overflow-style:none;flex-wrap:wrap;
+  }
+  nav.tabs::-webkit-scrollbar{display:none}
+  .tab-btn{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:10px 16px;border-radius:12px;
+    font-size:13.5px;font-weight:700;letter-spacing:-.005em;
+    color:var(--r-azul);background:var(--surface);
+    border:1px solid var(--line-2);cursor:pointer;transition:.18s;
+    box-shadow:var(--shadow-sm);
+    white-space:normal;line-height:1.2;max-width:100%;
+  }
+  .tab-btn:hover{
+    border-color:var(--r-azul);
+    background:linear-gradient(135deg,#f5f9fe,#eef4fc);
+    transform:translateY(-1px);box-shadow:var(--shadow-md);
+  }
+  .tab-btn.active{
+    background:linear-gradient(135deg,#0F1941 0%,#2175D9 55%,#3d8ee8 100%);
+    color:#fff;border-color:transparent;
+    box-shadow:0 6px 20px rgba(33,117,217,.3);
+  }
+  .tab-btn .dot{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.55;flex-shrink:0;position:relative}
+  .tab-btn .dot::before{content:'';position:absolute;inset:-2px;border-radius:50%;background:currentColor;opacity:.25}
+  .tab-btn.active .dot{opacity:1;background:#fff}
+  .tab-btn.active .dot::before{background:#fff}
+
+  main{padding:28px 20px 90px;max-width:1240px;margin:0 auto}
+  .page-head{margin-bottom:24px}
+  .page-head h1{font-size:26px;font-weight:700;letter-spacing:-.03em;display:flex;align-items:center;gap:10px}
+  .page-head p{color:var(--muted);font-size:14px;margin-top:5px}
+
+  .card{
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);padding:22px;margin-bottom:16px;
+    box-shadow:var(--shadow-sm);transition:box-shadow .2s;
+  }
+  .card:hover{box-shadow:var(--shadow-md)}
+  .card h2{font-size:15.5px;font-weight:700;margin-bottom:6px;letter-spacing:-.01em}
+  .card .sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+
+  .grid{display:grid;gap:12px}
+  .grid-4{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+  .grid-3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .grid-2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+
+  .stat{
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);padding:18px;
+    box-shadow:var(--shadow-sm);position:relative;overflow:hidden;transition:.2s;
+  }
+  .stat::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg,#0F1941,#2175D9,#009ee0);
+  }
+  .stat::after{
+    content:'';position:absolute;top:-20px;right:-20px;width:80px;height:80px;
+    border-radius:50%;background:radial-gradient(circle,rgba(33,117,217,.08) 0%,transparent 70%);
+  }
+  .stat:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+  .stat .l{font-size:12.5px;color:var(--muted);margin-bottom:8px;font-weight:600;letter-spacing:.02em;text-transform:uppercase}
+  .stat .v{font-size:28px;font-weight:800;letter-spacing:-.03em;color:var(--r-azul)}
+  .stat.ok::before{background:linear-gradient(90deg,#0f7b3f,#22c55e)}
+  .stat.ok .v{color:var(--ok)}
+  .stat.warn::before{background:linear-gradient(90deg,#a16207,#eab308)}
+  .stat.warn .v{color:var(--warn)}
+  .stat.laranja::before{background:linear-gradient(90deg,#c2410c,#f97316)}
+  .stat.laranja .v{color:var(--laranja)}
+  .stat.roxo::before{background:linear-gradient(90deg,#6d28d9,#a78bfa)}
+  .stat.roxo .v{color:var(--roxo)}
+  .stat.cinza::before{background:linear-gradient(90deg,#475569,#94a3b8)}
+  .stat.cinza .v{color:#475569}
+
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+  .row > .col{flex:1;min-width:160px}
+  .row > .col-fix{flex:0 0 auto;min-width:auto}
+
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  thead th{
+    text-align:left;padding:12px 14px;color:var(--muted);
+    font-size:11.5px;font-weight:700;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#fafbfd,#f5f7fb);
+    letter-spacing:.05em;text-transform:uppercase;
+  }
+  tbody td{padding:14px;border-bottom:1px solid var(--line)}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr{transition:background .12s}
+  tbody tr:hover{background:#fafbfd}
+
+  .pill{display:inline-block;padding:4px 11px;border-radius:20px;font-size:12px;font-weight:600}
+  .pill.aguardando{background:var(--warn-soft);color:var(--warn)}
+  .pill.devolvido{background:var(--ok-soft);color:var(--ok)}
+  .pill.coletado{background:var(--r-azul-soft);color:var(--r-azul)}
+  .pill.cinza{background:#f2f4f8;color:var(--muted)}
+  .pill.cobrado{background:#fdeceb;color:var(--danger);font-weight:700}
+
+  code{
+    font-family:'SF Mono','JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+    font-size:12.5px;background:var(--r-azul-soft);padding:3px 8px;border-radius:6px;
+    color:var(--r-azul);font-weight:600;
+  }
+
+  .empty{text-align:center;color:var(--muted-2);padding:44px 12px;font-size:13.5px}
+
+  .acc{
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);margin-bottom:12px;overflow:hidden;
+    box-shadow:var(--shadow-sm);transition:box-shadow .2s;
+  }
+  .acc:hover{box-shadow:var(--shadow-md)}
+  .acc.open{box-shadow:var(--shadow-lg)}
+  .acc-head{
+    padding:18px 20px;display:flex;align-items:center;justify-content:space-between;
+    cursor:pointer;user-select:none;transition:.15s;gap:12px;
+  }
+  .acc-head:hover{background:#fafbfd}
+  .acc-head .acc-title{display:flex;align-items:center;gap:14px;min-width:0}
+  .acc-head .acc-ic{
+    width:46px;height:46px;border-radius:13px;flex-shrink:0;
+    background:linear-gradient(135deg,#0F1941 0%,#2175D9 55%,#3d8ee8 100%);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 4px 12px rgba(33,117,217,.28);
+    position:relative;overflow:hidden;
+  }
+  .acc-head .acc-ic::before{
+    content:'';position:absolute;top:4px;right:4px;width:5px;height:5px;border-radius:50%;
+    background:rgba(255,255,255,.6);box-shadow:0 0 6px rgba(255,255,255,.8);
+    animation:twinkle 2s infinite ease-in-out;
+  }
+  .acc-head .acc-ic .rocket-icon{width:26px;height:26px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.15))}
+  .acc-head .acc-ic .sigla-badge{
+    position:absolute;bottom:2px;right:4px;
+    font-size:8px;font-weight:800;color:#fff;opacity:.75;letter-spacing:.05em;
+  }
+  .acc-head .acc-name{font-weight:700;font-size:16px;letter-spacing:-.015em}
+  .acc-head .acc-meta{font-size:12.5px;color:var(--muted);margin-top:3px}
+  .acc-head .chev{
+    width:26px;height:26px;flex-shrink:0;position:relative;
+    transition:transform .25s ease;border-radius:50%;background:#f4f6fa;
+  }
+  .acc-head .chev::before{
+    content:'';position:absolute;inset:0;margin:auto;
+    width:7px;height:7px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);
+    transform:rotate(45deg) translate(-1px,-1px);border-radius:1px;
+  }
+  .acc.open .chev{transform:rotate(180deg);background:var(--r-azul-soft)}
+  .acc.open .chev::before{border-color:var(--r-azul)}
+  .acc-body{max-height:0;overflow:hidden;transition:max-height .4s cubic-bezier(.4,0,.2,1)}
+  .acc.open .acc-body{max-height:12000px}
+
+  .sub-acc{border-top:1px solid var(--line);background:linear-gradient(180deg,#fbfcfe,#f7f9fc)}
+  .sub-acc-head{
+    padding:15px 20px;display:flex;align-items:center;justify-content:space-between;
+    cursor:pointer;user-select:none;transition:.15s;gap:12px;
+  }
+  .sub-acc-head:hover{background:#f3f6fb}
+  .sub-acc-head .st{display:flex;align-items:center;gap:10px}
+  .sub-acc-head .st .bullet{
+    width:9px;height:9px;border-radius:50%;background:var(--r-azul);flex-shrink:0;
+    box-shadow:0 0 0 4px rgba(33,117,217,.12);
+  }
+  .sub-acc-head .st .name{font-weight:700;font-size:14px}
+  .sub-acc-head .st .badge{
+    font-size:11.5px;color:var(--r-azul);background:var(--r-azul-soft);
+    padding:3px 10px;border-radius:20px;font-weight:700;
+  }
+  .sub-acc-head .mini-chev{width:16px;height:16px;position:relative;transition:transform .25s ease;flex-shrink:0}
+  .sub-acc-head .mini-chev::before{
+    content:'';position:absolute;inset:0;margin:auto;
+    width:6px;height:6px;border-right:2px solid var(--muted-2);border-bottom:2px solid var(--muted-2);
+    transform:rotate(45deg) translate(-1px,-1px);
+  }
+  .sub-acc.open .sub-acc-head .mini-chev{transform:rotate(180deg)}
+  .sub-acc-body{max-height:0;overflow:hidden;transition:max-height .35s cubic-bezier(.4,0,.2,1)}
+  .sub-acc.open .sub-acc-body{max-height:5000px}
+  .sub-acc-body-inner{padding:0 20px 22px}
+
+  .volumes-fixed{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 18px;
+    background:linear-gradient(135deg,#eef4fc,#e0ecfb);
+    border:1px solid var(--r-azul-line);border-radius:12px;margin-bottom:16px;
+    gap:14px;flex-wrap:wrap;box-shadow:inset 0 1px 0 rgba(255,255,255,.6);
+    position:relative;overflow:hidden;
+  }
+  .volumes-fixed::after{
+    content:'';position:absolute;right:14px;top:50%;transform:translateY(-50%);
+    width:60px;height:60px;border-radius:50%;
+    background:radial-gradient(circle,rgba(33,117,217,.06) 0%,transparent 70%);
+  }
+  .volumes-fixed .lbl{
+    font-size:12.5px;color:var(--r-azul);font-weight:700;
+    text-transform:uppercase;letter-spacing:.05em;
+    display:flex;align-items:center;gap:8px;
+  }
+  .volumes-fixed .lbl::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--r-azul)}
+  .volumes-fixed .val{font-size:26px;font-weight:800;color:var(--r-azul);letter-spacing:-.03em;position:relative;z-index:1}
+  .volumes-edit{display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:relative;z-index:1}
+  .volumes-edit input{
+    width:90px;padding:10px 12px;border:1px solid var(--r-azul-line);border-radius:10px;
+    font-size:16px;font-weight:700;color:var(--r-azul);background:#fff;text-align:center;
+    box-shadow:var(--shadow-sm);
+  }
+  .volumes-edit input:focus{outline:none;border-color:var(--r-azul);box-shadow:0 0 0 4px var(--r-azul-soft)}
+
+  .saldo-line{display:flex;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .saldo-line:last-child{border-bottom:none}
+  .saldo-line .k{color:var(--muted);font-weight:500}
+  .saldo-line .v{font-weight:700;font-size:15px}
+
+  .search-select{position:relative}
+  .search-select .list{
+    position:absolute;top:calc(100% + 6px);left:0;right:0;
+    background:var(--surface);border:1px solid var(--line-2);border-radius:12px;
+    box-shadow:var(--shadow-lg);max-height:340px;overflow-y:auto;z-index:20;
+    display:none;overflow:hidden;
+  }
+  .search-select .list.open{display:block}
+  .search-select .item{padding:13px 15px;cursor:pointer;border-bottom:1px solid var(--line);font-size:14px;transition:.12s}
+  .search-select .item:last-child{border-bottom:none}
+  .search-select .item:hover,.search-select .item.hl{background:var(--r-azul-soft)}
+  .search-select .item .name{font-weight:600}
+  .search-select .item .meta{font-size:12.5px;color:var(--muted);margin-top:3px}
+
+  .prod-search{position:relative}
+  .prod-search .ps-input{
+    width:100%;padding:12px 14px 12px 40px;border:1.5px solid var(--line-2);
+    background:#fff;border-radius:11px;font-size:15px;transition:.15s;color:var(--text);
+  }
+  .prod-search .ps-input:focus{
+    outline:none;border-color:var(--r-azul);box-shadow:0 0 0 4px var(--r-azul-soft);
+  }
+  .prod-search .ps-icon{
+    position:absolute;left:13px;top:50%;transform:translateY(-50%);
+    font-size:15px;color:var(--muted);pointer-events:none;
+  }
+  .prod-search .ps-selected{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    margin-top:6px;padding:10px 12px;border-radius:10px;
+    background:linear-gradient(135deg,#eef4fc,#e0ecfb);
+    border:1px solid var(--r-azul-line);font-size:13px;
+  }
+  .prod-search .ps-selected .ps-label{color:var(--r-azul-4);font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .prod-search .ps-selected .ps-clear{
+    background:transparent;color:var(--r-azul);font-size:12px;font-weight:700;
+    padding:4px 8px;border-radius:6px;
+  }
+  .prod-search .ps-selected .ps-clear:hover{background:rgba(33,117,217,.12)}
+  .prod-search .ps-list{
+    position:absolute;top:calc(100% + 6px);left:0;right:0;
+    background:var(--surface);border:1px solid var(--line-2);border-radius:12px;
+    box-shadow:var(--shadow-lg);max-height:320px;overflow-y:auto;z-index:30;
+    display:none;
+  }
+  .prod-search .ps-list.open{display:block}
+  .prod-search .ps-item{
+    padding:12px 14px;cursor:pointer;border-bottom:1px solid var(--line);
+    font-size:14px;transition:.12s;
+    display:flex;align-items:center;gap:10px;
+  }
+  .prod-search .ps-item:last-child{border-bottom:none}
+  .prod-search .ps-item:hover,.prod-search .ps-item.hl{background:var(--r-azul-soft)}
+  .prod-search .ps-item .ps-cod{
+    font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;
+    font-size:12px;background:var(--r-azul-soft);padding:3px 8px;border-radius:6px;
+    color:var(--r-azul);font-weight:700;flex-shrink:0;
+  }
+  .prod-search .ps-item .ps-desc{
+    flex:1;color:var(--text);font-weight:500;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .prod-search .ps-item .ps-desc em{
+    background:#fdf3d8;color:#8a6100;font-style:normal;
+    font-weight:700;padding:0 2px;border-radius:3px;
+  }
+  .prod-search .ps-empty{
+    padding:16px;text-align:center;color:var(--muted-2);font-size:13px;
+  }
+  .prod-search .ps-hint{
+    padding:10px 14px;background:#fafbfd;color:var(--muted);
+    font-size:11.5px;border-bottom:1px solid var(--line);
+    display:flex;justify-content:space-between;gap:10px;
+  }
+
+  .receipt{
+    border:1px solid var(--line);border-radius:var(--radius);
+    padding:26px;background:linear-gradient(180deg,#ffffff,#fafbfd);
+    box-shadow:var(--shadow-sm);
+  }
+  .receipt .rl{font-size:12.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+  .qr-wrap{
+    display:flex;flex-direction:column;align-items:center;gap:14px;
+    padding:22px;margin-top:6px;
+    background:linear-gradient(135deg,#f5f9fe,#eef4fc);
+    border:1px solid var(--r-azul-line);border-radius:14px;
+  }
+  .qr-wrap .qr-box{
+    background:#fff;padding:14px;border-radius:12px;
+    box-shadow:0 8px 24px rgba(33,117,217,.14);
+    display:flex;align-items:center;justify-content:center;
+    min-width:200px;min-height:200px;
+  }
+  .qr-wrap canvas, .qr-wrap img{display:block!important;border-radius:6px}
+  .qr-wrap .qr-code-text{
+    font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;
+    font-size:15px;font-weight:800;color:var(--r-azul);
+    letter-spacing:1.5px;text-align:center;word-break:break-all;
+    padding:12px 16px;background:#fff;border-radius:10px;
+    border:1px solid var(--r-azul-line);
+  }
+
+  .receipt-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+  .receipt-actions .btn{width:100%;padding:14px 16px;font-size:14px;justify-content:center}
+
+  .choice-group{display:flex;gap:12px;flex-wrap:wrap;margin-top:4px}
+  .choice{
+    flex:1;min-width:150px;padding:18px;border:2px solid var(--line-2);border-radius:12px;
+    cursor:pointer;transition:.2s;background:var(--surface);
+    text-align:center;font-weight:600;font-size:14.5px;
+    position:relative;overflow:hidden;
+  }
+  .choice:hover{border-color:var(--r-azul);background:var(--r-azul-soft);transform:translateY(-2px);box-shadow:var(--shadow-md)}
+  .choice.sel{
+    border-color:var(--r-azul);background:linear-gradient(135deg,#eef4fc,#e0ecfb);
+    color:var(--r-azul);font-weight:700;box-shadow:0 6px 20px rgba(33,117,217,.14);
+  }
+  .choice.sel::before{content:'✓';position:absolute;top:8px;right:12px;font-size:14px;font-weight:900;color:var(--r-azul)}
+
+  .cliente-fixed{
+    display:flex;align-items:center;gap:14px;
+    padding:20px;border-radius:12px;
+    border:1.5px solid var(--r-azul-line);
+    background:linear-gradient(135deg,#eef4fc,#e0ecfb);
+  }
+  .cliente-fixed .badge-cliente{
+    width:56px;height:56px;border-radius:14px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:16px;color:#fff;
+    box-shadow:0 4px 12px rgba(33,117,217,.25);
+  }
+  .cliente-fixed .badge-cliente.sh{background:linear-gradient(135deg,#ea580c,#f97316)}
+  .cliente-fixed .badge-cliente.ml{background:linear-gradient(135deg,#a16207,#eab308)}
+  .cliente-fixed .info-cliente{flex:1;min-width:0}
+  .cliente-fixed .info-cliente .label{
+    font-size:11.5px;color:var(--r-azul);font-weight:700;
+    text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;
+  }
+  .cliente-fixed .info-cliente .valor{
+    font-size:18px;font-weight:800;color:var(--r-azul-4);letter-spacing:-.02em;
+  }
+  .cliente-fixed .info-cliente .dica{
+    font-size:12.5px;color:var(--muted);margin-top:4px;
+  }
+
+  .client-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:20px;font-size:12.5px;font-weight:700}
+  .client-badge.sh{background:linear-gradient(135deg,#fff1ea,#ffe2d1);color:#c2410c}
+  .client-badge.ml{background:linear-gradient(135deg,#fffbe0,#fff4b8);color:#a16207}
+
+  #toast{
+    position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-30px);
+    background:linear-gradient(135deg,#0f7b3f,#12a150);color:#fff;
+    padding:16px 24px;border-radius:14px;font-size:14.5px;font-weight:600;
+    box-shadow:0 12px 40px rgba(15,123,63,.35);z-index:1000;
+    opacity:0;pointer-events:none;transition:.35s cubic-bezier(.4,0,.2,1);
+    max-width:calc(100% - 40px);
+  }
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+  .toast-inner{display:flex;align-items:center;gap:12px}
+  .toast-inner .ic{
+    width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.28);
+    display:flex;align-items:center;justify-content:center;font-weight:900;flex-shrink:0;
+  }
+  #toast.erro{background:linear-gradient(135deg,#b42318,#dc2626);box-shadow:0 12px 40px rgba(180,35,24,.35)}
+
+  .export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+
+  .recibo-bloco{
+    border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:14px;
+    background:var(--surface);box-shadow:var(--shadow-sm);
+  }
+  .recibo-bloco .recibo-head{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:12px;flex-wrap:wrap;margin-bottom:14px;
+    padding-bottom:12px;border-bottom:1px solid var(--line);
+  }
+  .recibo-bloco .recibo-titulo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px}
+  .recibo-bloco .recibo-titulo .cor{width:14px;height:14px;border-radius:50%;box-shadow:0 0 0 4px rgba(33,117,217,.08)}
+  .recibo-bloco .recibo-titulo .cor.sh{background:#ea580c;box-shadow:0 0 0 4px rgba(234,88,12,.12)}
+  .recibo-bloco .recibo-titulo .cor.ml{background:#eab308;box-shadow:0 0 0 4px rgba(234,179,8,.15)}
+  .recibo-bloco .recibo-totais{display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+  .recibo-bloco .recibo-totais b{color:var(--text);font-weight:700}
+
+  .bloco-actions{
+    display:flex;gap:10px;flex-wrap:wrap;
+    margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--line);
+    align-items:center;justify-content:space-between;
+  }
+  .bloco-actions .info{font-size:12.5px;color:var(--muted)}
+  .bloco-actions .info b{color:var(--text);font-weight:700}
+
+  /* Toolbar de produtos */
+  .toolbar-prod{
+    display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+    margin-bottom:16px;
+  }
+  .toolbar-prod .search-wrap{
+    flex:1;min-width:220px;position:relative;
+  }
+  .toolbar-prod .search-wrap input{
+    width:100%;padding:11px 14px 11px 40px;
+    border:1.5px solid var(--line-2);background:#fff;border-radius:11px;
+    font-size:14px;transition:.15s;
+  }
+  .toolbar-prod .search-wrap input:focus{
+    outline:none;border-color:var(--r-azul);box-shadow:0 0 0 4px var(--r-azul-soft);
+  }
+  .toolbar-prod .search-wrap .icon{
+    position:absolute;left:13px;top:50%;transform:translateY(-50%);
+    font-size:14px;color:var(--muted);pointer-events:none;
+  }
+  .toolbar-prod select{
+    padding:11px 14px;border:1.5px solid var(--line-2);background:#fff;
+    border-radius:11px;font-size:14px;transition:.15s;cursor:pointer;
+  }
+  .toolbar-prod select:focus{
+    outline:none;border-color:var(--r-azul);box-shadow:0 0 0 4px var(--r-azul-soft);
+  }
+
+  .contador-badge{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:6px 12px;background:var(--r-azul-soft);color:var(--r-azul);
+    border-radius:20px;font-size:12.5px;font-weight:700;
+  }
+
+  footer.credits{
+    text-align:center;padding:26px 16px 34px;
+    font-size:11.5px;color:var(--muted-2);letter-spacing:.03em;
+  }
+  footer.credits b{color:var(--muted);font-weight:600}
+
+  #colabApp{
+    position:fixed;inset:0;z-index:1500;
+    background:
+      radial-gradient(900px 500px at 90% -10%, rgba(61,142,232,.14), transparent 60%),
+      radial-gradient(800px 500px at -10% 110%, rgba(15,25,65,.12), transparent 60%),
+      linear-gradient(180deg,#ffffff 0%,#f5f8fd 100%);
+    overflow-y:auto;padding:24px 16px 60px;
+  }
+  #colabApp .wrap{max-width:520px;margin:0 auto}
+  #colabApp .hero{text-align:center;margin-bottom:24px;padding-top:12px}
+  #colabApp .hero .rocket-icon{animation:rocketFloat 3s ease-in-out infinite}
+  #colabApp .hero h1{font-size:24px;font-weight:800;letter-spacing:-.03em;color:var(--r-azul-4);margin:16px 0 6px}
+  #colabApp .hero p{color:var(--muted);font-size:14px}
+  #colabApp .card{
+    background:#fff;border:1px solid var(--line);border-radius:20px;
+    padding:26px;box-shadow:0 20px 60px rgba(15,25,65,.10), 0 8px 24px rgba(33,117,217,.06);
+    margin-bottom:16px;
+  }
+  #colabApp .card h2{font-size:17px;font-weight:700;color:var(--r-azul-4);margin-bottom:6px}
+  #colabApp .card .sub{color:var(--muted);font-size:13px;margin-bottom:20px}
+  #colabApp .campo{margin-bottom:16px}
+  #colabApp label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:6px;font-weight:600}
+  #colabApp input, #colabApp select{
+    width:100%;padding:13px 14px;border:1.5px solid var(--line-2);
+    background:#fff;border-radius:11px;font-size:15px;transition:.15s;color:var(--text);
+  }
+  #colabApp input:focus, #colabApp select:focus{
+    outline:none;border-color:var(--r-azul);box-shadow:0 0 0 4px var(--r-azul-soft);
+  }
+  #colabApp .btn-primary{
+    width:100%;padding:15px;border-radius:12px;font-size:15px;font-weight:700;
+    background:linear-gradient(135deg,#0F1941,#2175D9 60%,#3d8ee8);
+    color:#fff;border:none;cursor:pointer;
+    box-shadow:0 6px 18px rgba(33,117,217,.35);transition:.15s;
+  }
+  #colabApp .btn-primary:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 10px 28px rgba(33,117,217,.5)}
+  #colabApp .btn-secondary{
+    width:100%;padding:13px;border-radius:12px;font-size:14px;font-weight:600;
+    background:#fff;color:var(--text);border:1.5px solid var(--line-2);cursor:pointer;
+    transition:.15s;
+  }
+  #colabApp .btn-secondary:hover{background:#f4f6fa;border-color:var(--line)}
+  #colabApp .local{
+    margin-top:16px;padding:18px;border:1px solid var(--r-azul-line);
+    border-radius:14px;background:linear-gradient(135deg,#f5f9fe,#eef4fc);
+    font-size:13.5px;line-height:1.7;color:var(--text-2);
+  }
+  #colabApp .local strong{color:var(--r-azul-4)}
+  #colabApp .local-nome{margin-bottom:10px;color:var(--r-azul);font-size:15px;font-weight:800}
+  #colabApp .protocolo-box{
+    margin-top:12px;
+    background:linear-gradient(135deg,#0F1941,#2175D9);
+    border-radius:14px;padding:22px;
+    text-align:center;
+    box-shadow:0 12px 32px rgba(33,117,217,.28);
+  }
+  #colabApp .protocolo-box .lbl{
+    font-size:11.5px;color:rgba(255,255,255,.75);font-weight:700;
+    text-transform:uppercase;letter-spacing:.15em;margin-bottom:8px;
+  }
+  #colabApp .protocolo{
+    font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;
+    font-size:22px;font-weight:800;color:#fff;
+    letter-spacing:2px;word-break:break-all;
+    text-shadow:0 2px 8px rgba(0,0,0,.2);
+  }
+  #colabApp .protocolo-actions{
+    display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;
+  }
+  #colabApp .aviso-guarde{
+    margin-top:18px;padding:16px 18px;border-radius:12px;
+    background:linear-gradient(135deg,#fdf3d8,#fce9b8);
+    border:1.5px solid #e6c267;
+    font-size:13.5px;color:#725300;line-height:1.65;
+    display:flex;gap:12px;align-items:flex-start;
+    font-weight:500;
+  }
+  #colabApp .aviso-guarde .ic-aviso{
+    flex-shrink:0;width:26px;height:26px;border-radius:8px;
+    background:#e6c267;color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-size:15px;font-weight:900;
+  }
+  #colabApp .back-link{text-align:center;margin-top:16px;font-size:13px;color:var(--muted)}
+  #colabApp .back-link button{color:var(--r-azul);font-weight:600;text-decoration:underline}
+  #colabApp .erro{
+    background:var(--danger-soft);color:var(--danger);border:1px solid #f3c9c6;
+    padding:10px 12px;border-radius:10px;font-size:13px;margin-bottom:14px;display:none;
+  }
+  #colabApp .sucesso-banner{
+    background:linear-gradient(135deg,#e6f6ec,#d4f0de);
+    border:1px solid #b8e3c8;border-radius:14px;padding:18px;
+    text-align:center;margin-bottom:18px;
+  }
+  #colabApp .sucesso-banner .ic{
+    width:48px;height:48px;border-radius:50%;
+    background:linear-gradient(135deg,#0f7b3f,#12a150);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-size:24px;font-weight:900;margin:0 auto 10px;
+  }
+
+  .modal-bg{
+    position:fixed;inset:0;z-index:1800;
+    background:rgba(15,25,65,.55);
+    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    display:flex;align-items:center;justify-content:center;padding:20px;
+    opacity:0;pointer-events:none;transition:.25s;
+  }
+  .modal-bg.show{opacity:1;pointer-events:auto}
+  .modal{
+    background:#fff;border-radius:20px;
+    padding:28px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;
+    box-shadow:0 32px 80px rgba(15,25,65,.35);
+    transform:translateY(20px);transition:.25s;
+  }
+  .modal-bg.show .modal{transform:translateY(0)}
+  .modal h2{font-size:19px;font-weight:700;color:var(--r-azul-4);margin-bottom:6px;letter-spacing:-.02em}
+  .modal .sub{color:var(--muted);font-size:13px;margin-bottom:22px}
+  .modal .campo{margin-bottom:16px}
+  .modal label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:6px;font-weight:600}
+  .modal input, .modal select{
+    width:100%;padding:12px 14px;border:1.5px solid var(--line-2);
+    background:#fff;border-radius:11px;font-size:15px;transition:.15s;
+  }
+  .modal input:focus, .modal select:focus{
+    outline:none;border-color:var(--r-azul);box-shadow:0 0 0 4px var(--r-azul-soft);
+  }
+  .modal .erro{
+    background:var(--danger-soft);color:var(--danger);border:1px solid #f3c9c6;
+    padding:10px 12px;border-radius:10px;font-size:13px;margin-bottom:14px;display:none;
+  }
+  .modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:22px}
+  .modal-actions .btn{width:100%;padding:13px;font-size:14px;justify-content:center}
+
+  @media (max-width:640px){
+    body{font-size:14.5px}
+    header.app{padding:0 14px;height:58px}
+    header.app .title{font-size:13.5px}
+    header.app .title small{font-size:9.5px}
+    header.app .right .uname{display:none}
+    nav.tabs{padding:10px 14px;top:58px;gap:8px}
+    .tab-btn{padding:10px 12px;font-size:12.5px;flex:1 1 auto;justify-content:center}
+    main{padding:20px 14px 110px}
+    .page-head h1{font-size:22px}
+    .page-head p{font-size:13px}
+    .card{padding:18px;border-radius:12px}
+    .stat{padding:16px}
+    .stat .v{font-size:24px}
+    .acc-head{padding:16px}
+    .acc-head .acc-ic{width:42px;height:42px}
+    .acc-head .acc-ic .rocket-icon{width:22px;height:22px}
+    .acc-head .acc-name{font-size:15px}
+    .sub-acc-head{padding:13px 16px}
+    .sub-acc-body-inner{padding:0 16px 20px}
+    .volumes-fixed{padding:14px 16px;flex-direction:column;align-items:flex-start}
+    .volumes-fixed .val{font-size:22px}
+    .volumes-edit{width:100%}
+    .volumes-edit input{flex:1;width:auto}
+    thead th{padding:10px;font-size:10.5px}
+    tbody td{padding:12px 10px;font-size:13.5px}
+    .receipt{padding:18px}
+    .qr-wrap{padding:16px}
+    .qr-wrap .qr-box{min-width:170px;min-height:170px}
+    .qr-wrap .qr-code-text{font-size:13px;letter-spacing:1px}
+    .row > .col{min-width:100%}
+    .choice{padding:15px;font-size:14px}
+    #splash .rocket-wrap svg{width:100px;height:100px}
+    #splash .frase{font-size:18px}
+    .receipt-actions{grid-template-columns:1fr 1fr;gap:8px}
+    .receipt-actions .btn{padding:12px 10px;font-size:13px}
+    .bloco-actions{flex-direction:column;align-items:stretch}
+    .modal{padding:22px}
+    .modal-actions{grid-template-columns:1fr}
+    #colabApp .protocolo{font-size:18px}
+    #colabApp .protocolo-actions{grid-template-columns:1fr}
+    .toolbar-prod{flex-direction:column;align-items:stretch}
+    .toolbar-prod select{width:100%}
+  }
+
+  ::-webkit-scrollbar{width:8px;height:8px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:4px}
+  ::-webkit-scrollbar-thumb:hover{background:#9ca3af}
+</style>
+</head>
+<body>
+
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="rocket-svg" viewBox="0 0 120 120">
+    <g class="flame">
+      <path d="M60 105 L54 118 L60 122 L66 118 Z" fill="#FFB800"/>
+      <path d="M60 105 L57 116 L60 119 L63 116 Z" fill="#FF6B00"/>
+      <path d="M60 105 L58.5 113 L60 115 L61.5 113 Z" fill="#FFF"/>
+    </g>
+    <path d="M60 10 C 45 30, 42 55, 45 85 L 75 85 C 78 55, 75 30, 60 10 Z" fill="#FFFFFF"/>
+    <path d="M60 10 C 52 20, 47 32, 45 45 L 75 45 C 73 32, 68 20, 60 10 Z" fill="#2175D9"/>
+    <path d="M60 10 L 55 25 L 65 25 Z" fill="#0F1941"/>
+    <circle cx="60" cy="55" r="8" fill="#0F1941"/>
+    <circle cx="60" cy="55" r="6" fill="#3d8ee8"/>
+    <circle cx="60" cy="55" r="3.5" fill="#009ee0"/>
+    <circle cx="59" cy="54" r="1.2" fill="#FFFFFF" opacity=".9"/>
+    <rect x="46" y="72" width="28" height="6" rx="2" fill="#009ee0"/>
+    <path d="M45 75 L 32 90 L 45 88 Z" fill="#2175D9"/>
+    <path d="M75 75 L 88 90 L 75 88 Z" fill="#2175D9"/>
+    <path d="M45 75 L 38 84 L 45 83 Z" fill="#3d8ee8"/>
+    <path d="M75 75 L 82 84 L 75 83 Z" fill="#3d8ee8"/>
+  </symbol>
+</svg>
+
+<div id="splash">
+  <div class="stars" id="stars"></div>
+  <div class="rocket-wrap">
+    <svg class="rocket-icon xl" viewBox="0 0 120 120"><use href="#rocket-svg"/></svg>
+  </div>
+  <div class="frase">
+    Embarque na Nave Randstad
+    <span>Parceira para o seu talento</span>
+  </div>
+  <div class="bar"><i></i></div>
+</div>
+
+<div id="login" class="hidden">
+  <div class="box">
+    <div class="brandmark">
+      <svg class="rocket-icon lg" viewBox="0 0 120 120"><use href="#rocket-svg"/></svg>
+      <div class="t">Randstad · Devoluções</div>
+    </div>
+    <h1>Bem-vindo à Nave</h1>
+    <p class="sub">Controle de uniformes e EPI</p>
+    <div class="form-card">
+      <h2>Acessar sistema</h2>
+      <div class="desc">Informe suas credenciais para continuar.</div>
+      <div id="loginErro" class="erro"></div>
+      <div class="field">
+        <label>Usuário</label>
+        <input id="loginUser" class="input" autocomplete="off" placeholder="gestor"/>
+      </div>
+      <div class="field">
+        <label>Senha</label>
+        <input id="loginPass" class="input" type="password" autocomplete="off" placeholder="••••"/>
+      </div>
+      <button class="btn full" onclick="fazerLogin()">
+        <svg class="rocket-icon sm" viewBox="0 0 120 120"><use href="#rocket-svg"/></svg>
+        Acessar
+      </button>
+      <a class="link-colab" onclick="abrirColabPublico()">
+        <svg class="rocket-icon sm" viewBox="0 0 120 120"><use href="#rocket-svg"/></svg>
+        Quero devolver meu uniforme e EPI
+      </a>
+      <div class="creds-hint">
+        <b>gestor</b>/123 · <b>aurora</b>/123 · <b>franco</b>/123 · <b>barueri</b>/123<br/>
+        <b>shopee</b>/123 · <b>mercado</b>/123 · <b>motorista</b>/123
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="colabApp" class="hidden">
+  <div class="wrap">
+    <div class="hero">
+      <svg class="rocket-icon lg" viewBox="0 0 120 120"><use href="#rocket-svg"/></svg>
+      <h1>Devolução de Uniforme e EPI</h1>
+      <p>Preencha seus dados e escolha o ponto de devolução</p>
+    </div>
+
+    <section id="colabInicio" class="card">
+      <h2 style="text-align:center">Vamos começar!</h2>
+      <div class="sub" style="text-align:center">Seu cadastro leva menos de 1 minuto.</div>
+      <button class="btn-primary" onclick="colabAbrirFormulario()">Iniciar cadastro</button>
+      <div class="back-link" style="margin-top:18px">
+        <button onclick="fecharColabPublico()">← Voltar para o login</button>
+      </div>
+    </section>
+
+    <section id="colabForm" class="card hidden">
+      <h2>Preencha seus dados</h2>
+      <div class="sub">Todos os campos são obrigatórios.</div>
+      <div id="colabErro" class="erro"></div>
+      <form id="colabCadastro" onsubmit="colabSalvar(event)">
+        <div class="campo">
+          <label for="colabNome">Nome completo</label>
+          <input id="colabNome" name="nome" autocomplete="name" required placeholder="Seu nome completo"/>
+        </div>
+        <div class="campo">
+          <label for="colabCpf">CPF</label>
+          <input id="colabCpf" name="cpf" inputmode="numeric" required placeholder="000.000.000-00" maxlength="14"/>
+        </div>
+        <div class="campo">
+          <label for="colabTelefone">Telefone</label>
+          <input id="colabTelefone" name="telefone" type="tel" autocomplete="tel" required placeholder="(11) 90000-0000" maxlength="15"/>
+        </div>
+        <div class="campo">
+          <label for="colabEmail">E-mail</label>
+          <input id="colabEmail" name="email" type="email" autocomplete="email" required placeholder="seu@email.com"/>
+        </div>
+        <div class="campo">
+          <label for="colabCliente">Em qual cliente você atuava?</label>
+          <select id="colabCliente" required>
+            <option value="">Selecione o cliente</option>
+            <option value="Shopee">Shopee</option>
+            <option value="Mercado Livre">Mercado Livre</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="colabPonto">Ponto de devolução</label>
+          <select id="colabPonto" required>
+            <option value="">Selecione um ponto</option>
+            <option value="Aurora">Vila Aurora — Drogaria Luis Farma</option>
+            <option value="Franco da Rocha">Franco da Rocha — Liss Moda Fashin</option>
+            <option value="Barueri">Barueri — Happy Shop</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-primary">Salvar cadastro</button>
+      </form>
+    </section>
+
+    <section id="colabConfirm" class="card hidden">
+      <div class="sucesso-banner">
+        <div class="ic">✓</div>
+        <div style="font-size:17px;font-weight:800;color:var(--ok);letter-spacing:-.02em">Cadastro realizado com sucesso!</div>
+      </div>
+
+      <h2 style="text-align:center">Seu protocolo de atendimento</h2>
+      <div class="sub" style="text-align:center">Apresente este número no ponto de devolução.</div>
+
+      <div class="protocolo-box">
+        <div class="lbl">Protocolo</div>
+        <div class="protocolo" id="colabProtocolo"></div>
+      </div>
+
+      <div class="protocolo-actions">
+        <button class="btn-secondary" onclick="copiarProtocolo()">
+          <span id="btnCopiarTexto">📋 Copiar protocolo</span>
+        </button>
+        <button class="btn-secondary" onclick="window.print()">
+          🖨 Imprimir
+        </button>
+      </div>
+
+      <div class="aviso-guarde">
+        <div class="ic-aviso">!</div>
+        <div>
+          <b>Guarde este protocolo.</b><br>
+          Você vai precisar dele no ponto de devolução. Tire um print da tela ou anote o número para não esquecer.
+        </div>
+      </div>
+
+      <div class="local">
+        <div class="local-nome" id="colabNomeLocal"></div>
+        <div id="colabDadosLocal"></div>
+      </div>
+
+      <div style="margin-top:14px;font-size:12.5px;color:var(--muted);text-align:center">
+        Cadastro registrado em <b id="colabHora"></b>
+      </div>
+
+      <div style="margin-top:22px">
+        <button class="btn-primary" onclick="colabConcluir()">Concluir</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<header class="app hidden" id="topo">
+  <div class="left">
+    <svg class="rocket-icon md" viewBox="0 0 120 120"><use href="#rocket-svg"/></svg>
+    <div class="title" id="topoTitulo">
+      Randstad
+      <small id="topoSubtitulo">Nave · Devoluções</small>
+    </div>
+  </div>
+  <div class="right">
+    <div class="user"><div class="avatar" id="avatar"></div><span class="uname" id="nomeUsuario"></span></div>
+    <button onclick="logout()">Sair</button>
+  </div>
+</header>
+
+<nav class="tabs hidden" id="menu"></nav>
+<main class="hidden" id="conteudo"></main>
+
+<footer class="credits hidden" id="credits">Desenvolvido por <b>EuSou Tecnologia</b></footer>
+
+<div id="toast"><div class="toast-inner"><div class="ic">✓</div><span id="toastMsg">Sucesso</span></div></div>
+
+<div class="modal-bg" id="modalEditar">
+  <div class="modal">
+    <h2>Editar cadastro</h2>
+    <div class="sub">Altere os dados e salve. Alterações são aplicadas imediatamente.</div>
+    <div class="erro" id="modalErro"></div>
+    <div class="campo">
+      <label for="editNome">Nome completo</label>
+      <input id="editNome" autocomplete="off"/>
+    </div>
+    <div class="campo">
+      <label for="editCpf">CPF</label>
+      <input id="editCpf" inputmode="numeric" maxlength="14" autocomplete="off"/>
+    </div>
+    <div class="campo">
+      <label for="editTelefone">Telefone</label>
+      <input id="editTelefone" type="tel" maxlength="15" autocomplete="off"/>
+    </div>
+    <div class="campo">
+      <label for="editEmail">E-mail</label>
+      <input id="editEmail" type="email" autocomplete="off"/>
+    </div>
+    <div class="campo">
+      <label for="editCliente">Cliente</label>
+      <select id="editCliente">
+        <option value="">Não informado</option>
+        <option value="Shopee">Shopee</option>
+        <option value="Mercado Livre">Mercado Livre</option>
+      </select>
+    </div>
+    <div class="campo">
+      <label for="editPonto">Ponto de devolução</label>
+      <select id="editPonto">
+        <option value="Aurora">Vila Aurora</option>
+        <option value="Franco da Rocha">Franco da Rocha</option>
+        <option value="Barueri">Barueri</option>
+      </select>
+    </div>
+    <div class="campo">
+      <label for="editStatus">Status</label>
+      <select id="editStatus">
+        <option value="aguardando">Aguardando</option>
+        <option value="devolvido">Devolvido</option>
+        <option value="coletado">Coletado</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="fecharModalEditar()">Cancelar</button>
+      <button class="btn primary" onclick="salvarEdicao()">Salvar alterações</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalProduto">
+  <div class="modal">
+    <h2 id="modalProdTitulo">Adicionar produto</h2>
+    <div class="sub">Preencha os dados do produto. Código e cliente são obrigatórios.</div>
+    <div class="erro" id="modalProdErro"></div>
+    <div class="campo">
+      <label for="prodCodigo">Código *</label>
+      <input id="prodCodigo" autocomplete="off" placeholder="Ex: CAM-P"/>
+    </div>
+    <div class="campo">
+      <label for="prodDescricao">Descrição *</label>
+      <input id="prodDescricao" autocomplete="off" placeholder="Ex: Camisa Polo P"/>
+    </div>
+    <div class="campo">
+      <label for="prodCliente">Cliente *</label>
+      <select id="prodCliente">
+        <option value="">Selecione</option>
+        <option value="Shopee">Shopee</option>
+        <option value="Mercado Livre">Mercado Livre</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="fecharModalProduto()">Cancelar</button>
+      <button class="btn primary" id="btnSalvarProduto" onclick="salvarProduto()">Salvar produto</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function iniciarSplash(){
+  const starsBox = document.getElementById('stars');
+  for(let i=0;i<40;i++){
+    const s = document.createElement('span');
+    s.style.left = Math.random()*100 + '%';
+    s.style.top = Math.random()*100 + '%';
+    s.style.animationDelay = (Math.random()*2) + 's';
+    s.style.opacity = (0.3 + Math.random()*0.7);
+    const size = 1 + Math.random()*2;
+    s.style.width = size + 'px';
+    s.style.height = size + 'px';
+    starsBox.appendChild(s);
+  }
+  setTimeout(()=>{
+    document.getElementById('splash').classList.add('hide');
+    document.getElementById('login').classList.remove('hidden');
+    setTimeout(()=>{ document.getElementById('splash').remove(); }, 600);
+  }, 2000);
+})();
+
+const KEY='randstad_dev_v19';
+const EMAIL_GESTOR = 'joel.santos@randstad.com.br';
+
+let db = loadDB();
+function loadDB(){
+  const raw = localStorage.getItem(KEY);
+  if(raw) return JSON.parse(raw);
+  return seed();
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(db)); }
+
+function seed(){
+  return {
+    colaboradores: [],
+    produtos: [],
+    devolucoes: [],
+    sequenciais: {},
+    volumesPorPonto: {},
+    importacoes: [],
+    lavanderia: [],
+    historicoCliente: {
+      'Shopee': { concluidas: [], pendentes: [] },
+      'Mercado Livre': { concluidas: [], pendentes: [] }
+    },
+    cobrancas: []
+  };
+}
+
+const USERS = [
+  { user:'gestor',    pass:'123', perfil:'gestor',    nome:'Gestor',          email:EMAIL_GESTOR, subtitulo:'Comando Geral' },
+  { user:'aurora',    pass:'123', perfil:'loja',      nome:'Aurora',          ponto:'Aurora',          subtitulo:'Base de Operações' },
+  { user:'franco',    pass:'123', perfil:'loja',      nome:'Franco da Rocha', ponto:'Franco da Rocha', subtitulo:'Base de Operações' },
+  { user:'barueri',   pass:'123', perfil:'loja',      nome:'Barueri',         ponto:'Barueri',         subtitulo:'Base de Operações' },
+  { user:'shopee',    pass:'123', perfil:'cliente',   nome:'Shopee',          cliente:'Shopee',        subtitulo:'Painel do Cliente' },
+  { user:'mercado',   pass:'123', perfil:'cliente',   nome:'Mercado Livre',   cliente:'Mercado Livre', subtitulo:'Painel do Cliente' },
+  { user:'motorista', pass:'123', perfil:'motorista', nome:'Motorista',                                subtitulo:'Rota de Coleta' },
+];
+let user = null;
+let aba = null;
+
+const PONTOS = ['Aurora','Franco da Rocha','Barueri'];
+const hoje = ()=>{const d=new Date();return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`};
+const agora = ()=>new Date().toLocaleString('pt-BR');
+const soNum = s => (s||'').toString().replace(/\D/g,'');
+const esc = s => (s??'').toString().replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const iniciais = n => (n||'').split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase();
+const siglaPonto = p => (p||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z]/g,'').slice(0,3).toUpperCase();
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+function normalizaTexto(s){
+  return (s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+}
+function destacar(descricao, busca){
+  if(!busca) return esc(descricao);
+  const descN = normalizaTexto(descricao);
+  const buscaN = normalizaTexto(busca);
+  const idx = descN.indexOf(buscaN);
+  if(idx < 0) return esc(descricao);
+  const antes = descricao.slice(0, idx);
+  const meio = descricao.slice(idx, idx + busca.length);
+  const depois = descricao.slice(idx + busca.length);
+  return esc(antes) + '<em>' + esc(meio) + '</em>' + esc(depois);
+}
+
+const PONTOS_INFO = {
+  'Aurora': {
+    nome: "Vila Aurora — Drogaria Luis Farma",
+    endereco: "Rua Francisco da Cunha Menezes, 1101 — Jardim Santa Lucrecia, São Paulo/SP, CEP 05185-200",
+    horario: "Segunda a sexta, das 08h às 17h",
+    telefone: "(11) 98417-3582",
+    letra: "A"
+  },
+  'Franco da Rocha': {
+    nome: "Franco da Rocha — Liss Moda Faschion",
+    endereco: "Rua Cavalheiro Angelo Sestini, 189 — Centro, Franco da Rocha",
+    horario: "Segunda a sexta, das 10h às 17h",
+    telefone: "(11) 97251-4531",
+    letra: "F"
+  },
+  'Barueri': {
+    nome: "Barueri — Happy Shop",
+    endereco: "Rua Yasuo Fujitta, 54, sala 6 — Barueri",
+    horario: "Segunda a sexta, das 10h às 17h",
+    telefone: "(11) 97438-9950",
+    letra: "B"
+  }
+};
+
+function rocketIcon(size){
+  const cls = size==='sm'?'sm':size==='lg'?'lg':size==='xl'?'xl':'md';
+  return `<svg class="rocket-icon ${cls}" viewBox="0 0 120 120"><use href="#rocket-svg"/></svg>`;
+}
+
+function toast(msg, tipo){
+  const el=document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  el.classList.toggle('erro', tipo==='erro');
+  el.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=>el.classList.remove('show'), 3500);
+}
+
+function gerarCodigo(cpf, nome, ponto){
+  const partes = (nome||'').trim().split(/\s+/);
+  const primeiraNome = (partes[0]||'X')[0].toUpperCase();
+  const primeiraSobrenome = (partes.length>1 ? partes[partes.length-1] : 'X')[0].toUpperCase();
+  const d = new Date();
+  const mes = String(d.getMonth()+1).padStart(2,'0');
+  const ano = String(d.getFullYear()).slice(-2);
+  const letraPonto = (PONTOS_INFO[ponto]?.letra) || siglaPonto(ponto).charAt(0) || 'X';
+  const chave = `${primeiraNome}${mes}${ano}${letraPonto}`;
+  if(!db.sequenciais) db.sequenciais = {};
+  db.sequenciais[chave] = (db.sequenciais[chave]||0)+1;
+  const seq = String(db.sequenciais[chave]).padStart(4,'0');
+  return `${primeiraNome}${mes}${ano}${letraPonto}${seq}${primeiraSobrenome}`;
+}
+
+function getVolumesPonto(ponto){ return db.volumesPorPonto[ponto] ?? 0; }
+function setVolumesPonto(ponto, val){ db.volumesPorPonto[ponto] = +val||0; save(); }
+
+function produtosAgregados(ponto){
+  const mapa = {};
+  db.devolucoes.filter(d=>d.ponto===ponto && !d.coletado).forEach(d=>{
+    d.itens.forEach(it=>{
+      const k = it.codigo+'|'+it.descricao;
+      if(!mapa[k]) mapa[k] = {codigo:it.codigo, descricao:it.descricao, qtd:0};
+      mapa[k].qtd += +it.qtd||0;
+    });
+  });
+  return Object.values(mapa).sort((a,b)=>a.codigo.localeCompare(b.codigo));
+}
+function produtosColetadosPorPonto(ponto){
+  const mapa = {};
+  db.devolucoes.filter(d=>d.ponto===ponto && d.coletado).forEach(d=>{
+    d.itens.forEach(it=>{
+      const k = it.codigo+'|'+it.descricao+'|'+(d.cliente||'');
+      if(!mapa[k]) mapa[k] = {codigo: it.codigo, descricao: it.descricao, cliente: d.cliente || 'N/D', qtd: 0};
+      mapa[k].qtd += +it.qtd||0;
+    });
+  });
+  return Object.values(mapa).sort((a,b)=>a.codigo.localeCompare(b.codigo));
+}
+function produtosColetadosConsolidado(){
+  const mapa = {};
+  PONTOS.forEach(p=>{
+    db.devolucoes.filter(d=>d.ponto===p && d.coletado).forEach(d=>{
+      d.itens.forEach(it=>{
+        const k = (d.cliente||'N/D') + '|' + it.codigo + '|' + it.descricao;
+        if(!mapa[k]) mapa[k] = {cliente: d.cliente || 'N/D', codigo: it.codigo, descricao: it.descricao, qtd: 0};
+        mapa[k].qtd += +it.qtd||0;
+      });
+    });
+  });
+  return Object.values(mapa);
+}
+function volumesConsolidado(){ return PONTOS.reduce((s,p)=>s+getVolumesPonto(p), 0); }
+function devolucoesIndividuais(ponto){
+  return db.devolucoes.filter(d=>d.ponto===ponto && !d.coletado).sort((a,b)=>a.nome.localeCompare(b.nome));
+}
+function devMatchesPeriod(dev, ano, mes){
+  if(!ano || !mes) return true;
+  const m = (dev.dataHora||'').match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  if(!m) return false;
+  const [_, dd, mm, yyyy] = m;
+  return (+yyyy === +ano) && (+mm === +mes);
+}
+function colabMatchesPeriod(colab, ano, mes){
+  if(!ano || !mes) return true;
+  if(!colab.dataInsercaoISO) return true;
+  const [yyyy, mm] = colab.dataInsercaoISO.split('-');
+  return (+yyyy === +ano) && (+mm === +mes);
+}
+function garantirHistorico(cliente){
+  if(!db.historicoCliente) db.historicoCliente = {};
+  if(!db.historicoCliente[cliente]) db.historicoCliente[cliente] = { concluidas: [], pendentes: [] };
+  if(!db.historicoCliente[cliente].concluidas) db.historicoCliente[cliente].concluidas = [];
+  if(!db.historicoCliente[cliente].pendentes) db.historicoCliente[cliente].pendentes = [];
+  return db.historicoCliente[cliente];
+}
+function normalizarCliente(valor){
+  const v = (valor||'').toString().trim().toUpperCase();
+  if(!v) return '';
+  if(v === 'SH' || v === 'SHOPEE' || v.startsWith('SHOPEE')) return 'Shopee';
+  if(v === 'ML' || v === 'MERCADO LIVRE' || v === 'MERCADOLIVRE' || v === 'MERCADO' || v.startsWith('MERCADO')) return 'Mercado Livre';
+  return valor.toString().trim();
+}
+function zerarBase(){
+  if(!confirm('⚠ ATENÇÃO!\n\nIsso vai APAGAR TODOS os dados do sistema:\n\n• Colaboradores\n• Produtos\n• Devoluções\n• Importações\n• Lavanderia\n• Históricos\n• Cobranças\n\nEssa ação NÃO PODE ser desfeita.\n\nDeseja continuar?')) return;
+  if(!confirm('🚨 Tem CERTEZA ABSOLUTA?\n\nDepois desta ação não há como voltar atrás.\n\nClique OK para apagar TUDO.')) return;
+  db = seed();
+  save();
+  toast('Base zerada com sucesso!');
+  renderImport();
+}
+
+/* PÁGINA PÚBLICA */
+let _colabDev = null;
+
+function abrirColabPublico(){
+  document.getElementById('login').classList.add('hidden');
+  document.getElementById('colabApp').classList.remove('hidden');
+  document.getElementById('colabInicio').classList.remove('hidden');
+  document.getElementById('colabForm').classList.add('hidden');
+  document.getElementById('colabConfirm').classList.add('hidden');
+  document.getElementById('colabCadastro').reset();
+  document.getElementById('colabErro').style.display='none';
+  _colabDev = null;
+}
+function fecharColabPublico(){
+  document.getElementById('colabApp').classList.add('hidden');
+  document.getElementById('login').classList.remove('hidden');
+}
+function colabAbrirFormulario(){
+  document.getElementById('colabInicio').classList.add('hidden');
+  document.getElementById('colabForm').classList.remove('hidden');
+}
+function mascaraCPF(v){
+  v = soNum(v).slice(0,11);
+  v = v.replace(/(\d{3})(\d)/,'$1.$2');
+  v = v.replace(/(\d{3})(\d)/,'$1.$2');
+  v = v.replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+  return v;
+}
+function mascaraTelefone(v){
+  v = soNum(v).slice(0,11);
+  if(v.length <= 10){
+    v = v.replace(/(\d{2})(\d)/,'($1) $2');
+    v = v.replace(/(\d{4})(\d)/,'$1-$2');
+  } else {
+    v = v.replace(/(\d{2})(\d)/,'($1) $2');
+    v = v.replace(/(\d{5})(\d)/,'$1-$2');
+  }
+  return v;
+}
+function validaCPF(cpf){
+  cpf = soNum(cpf);
+  if(cpf.length !== 11) return false;
+  if(/^(\d)\1{10}$/.test(cpf)) return false;
+  let soma = 0, resto;
+  for(let i=1;i<=9;i++) soma += parseInt(cpf[i-1]) * (11-i);
+  resto = (soma*10) % 11;
+  if(resto === 10 || resto === 11) resto = 0;
+  if(resto !== parseInt(cpf[9])) return false;
+  soma = 0;
+  for(let i=1;i<=10;i++) soma += parseInt(cpf[i-1]) * (12-i);
+  resto = (soma*10) % 11;
+  if(resto === 10 || resto === 11) resto = 0;
+  if(resto !== parseInt(cpf[10])) return false;
+  return true;
+}
+function colabSalvar(ev){
+  ev.preventDefault();
+  const erro = document.getElementById('colabErro');
+  const nome = document.getElementById('colabNome').value.trim();
+  const cpfFormat = document.getElementById('colabCpf').value.trim();
+  const cpf = soNum(cpfFormat);
+  const tel = document.getElementById('colabTelefone').value.trim();
+  const email = document.getElementById('colabEmail').value.trim();
+  const cliente = document.getElementById('colabCliente').value;
+  const ponto = document.getElementById('colabPonto').value;
+
+  erro.style.display = 'none';
+
+  if(!nome || nome.split(/\s+/).length < 2){
+    erro.style.display='block'; erro.textContent = 'Informe o nome completo (nome e sobrenome).'; return;
+  }
+  if(!validaCPF(cpf)){
+    erro.style.display='block'; erro.textContent = 'CPF inválido. Verifique o número digitado.'; return;
+  }
+  if(!tel || soNum(tel).length < 10){
+    erro.style.display='block'; erro.textContent = 'Telefone inválido.'; return;
+  }
+  if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    erro.style.display='block'; erro.textContent = 'E-mail inválido.'; return;
+  }
+  if(!cliente){ erro.style.display='block'; erro.textContent = 'Selecione o cliente.'; return; }
+  if(!ponto){ erro.style.display='block'; erro.textContent = 'Selecione o ponto de devolução.'; return; }
+
+  const existente = db.colaboradores.find(c=>soNum(c.cpf)===cpf);
+  if(existente){
+    erro.style.display='block';
+    erro.innerHTML = `<b>CPF já cadastrado!</b><br/>Já existe um cadastro com este CPF para <b>${esc(existente.nome)}</b> (ponto ${esc(existente.ponto)}).<br/>Se já se cadastrou, dirija-se ao ponto escolhido.`;
+    return;
+  }
+
+  _colabDev = { nome, cpf, telefone: tel, email, ponto, cliente };
+  const codigoUnico = gerarCodigo(cpf, nome, ponto);
+  _colabDev.codigoUnico = codigoUnico;
+
+  const info = PONTOS_INFO[ponto];
+  document.getElementById('colabNomeLocal').textContent = info.nome;
+  document.getElementById('colabDadosLocal').innerHTML =
+    `<strong>Endereço:</strong> ${esc(info.endereco)}<br>` +
+    `<strong>Atendimento:</strong> ${esc(info.horario)}<br>` +
+    `<strong>Telefone para dúvidas:</strong> ${esc(info.telefone)}`;
+  document.getElementById('colabProtocolo').textContent = codigoUnico;
+  document.getElementById('colabHora').textContent = agora();
+  document.getElementById('btnCopiarTexto').textContent = '📋 Copiar protocolo';
+
+  document.getElementById('colabForm').classList.add('hidden');
+  document.getElementById('colabConfirm').classList.remove('hidden');
+}
+function copiarProtocolo(){
+  const texto = _colabDev?.codigoUnico || '';
+  if(!texto) return;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(texto).then(()=>{
+      document.getElementById('btnCopiarTexto').textContent = '✓ Copiado!';
+      setTimeout(()=>{ document.getElementById('btnCopiarTexto').textContent = '📋 Copiar protocolo'; }, 2000);
+    }).catch(()=>{ copiarFallback(texto); });
+  } else { copiarFallback(texto); }
+}
+function copiarFallback(texto){
+  const ta = document.createElement('textarea');
+  ta.value = texto;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try{
+    document.execCommand('copy');
+    document.getElementById('btnCopiarTexto').textContent = '✓ Copiado!';
+    setTimeout(()=>{ document.getElementById('btnCopiarTexto').textContent = '📋 Copiar protocolo'; }, 2000);
+  }catch(e){ alert('Protocolo: ' + texto); }
+  document.body.removeChild(ta);
+}
+function colabConcluir(){
+  if(!_colabDev) return;
+  const d = _colabDev;
+  const isoAgora = new Date().toISOString().slice(0,10);
+
+  const novoColab = {
+    nome: d.nome, cpf: d.cpf, telefone: d.telefone, email: d.email,
+    ponto: d.ponto, cliente: d.cliente,
+    status: 'aguardando', volumes: 0,
+    dataInsercao: agora(), dataInsercaoISO: isoAgora,
+    origem: 'autocadastro',
+    codigoProtocolo: d.codigoUnico
+  };
+  db.colaboradores.push(novoColab);
+
+  if(!db.importacoes) db.importacoes = [];
+  db.importacoes.push({
+    id: Date.now(),
+    arquivo: 'Devolução via formulário público',
+    dataHora: agora(),
+    novos: 1, atualizados: 0, ignorados: 0,
+    totalApos: db.colaboradores.length
+  });
+
+  save();
+  toast(`Cadastro efetivado! Protocolo ${d.codigoUnico}`);
+  _colabDev = null;
+
+  document.getElementById('colabApp').classList.add('hidden');
+  document.getElementById('login').classList.remove('hidden');
+  document.getElementById('colabCadastro').reset();
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  const elCpf = document.getElementById('colabCpf');
+  const elTel = document.getElementById('colabTelefone');
+  if(elCpf) elCpf.addEventListener('input', e => { e.target.value = mascaraCPF(e.target.value); });
+  if(elTel) elTel.addEventListener('input', e => { e.target.value = mascaraTelefone(e.target.value); });
+  const elEditCpf = document.getElementById('editCpf');
+  const elEditTel = document.getElementById('editTelefone');
+  if(elEditCpf) elEditCpf.addEventListener('input', e => { e.target.value = mascaraCPF(e.target.value); });
+  if(elEditTel) elEditTel.addEventListener('input', e => { e.target.value = mascaraTelefone(e.target.value); });
+});
+
+/* LOGIN / BOOT */
+function fazerLogin(){
+  const u=document.getElementById('loginUser').value.trim().toLowerCase();
+  const p=document.getElementById('loginPass').value.trim();
+  const e=document.getElementById('loginErro');
+  const m=USERS.find(x=>x.user===u&&x.pass===p);
+  if(!m){e.style.display='block';e.textContent='Credenciais inválidas.';return}
+  user=m; sessionStorage.setItem('randstad_user',JSON.stringify(m)); boot();
+}
+function logout(){ sessionStorage.removeItem('randstad_user'); location.reload(); }
+
+function boot(){
+  document.getElementById('login').classList.add('hidden');
+  document.getElementById('colabApp').classList.add('hidden');
+  document.getElementById('topo').classList.remove('hidden');
+  document.getElementById('menu').classList.remove('hidden');
+  document.getElementById('conteudo').classList.remove('hidden');
+  document.getElementById('credits').classList.remove('hidden');
+  document.getElementById('nomeUsuario').textContent = user.nome;
+  document.getElementById('avatar').textContent = iniciais(user.nome);
+
+  const titulos = {
+    gestor:    { titulo:'Randstad · Gestor',       sub:'Nave de Comando' },
+    loja:      { titulo:`Randstad · ${user.nome}`, sub:user.subtitulo || 'Base de Operações' },
+    cliente:   { titulo:`Randstad · ${user.nome}`, sub:user.subtitulo || 'Painel do Cliente' },
+    motorista: { titulo:'Randstad · Motorista',    sub:'Rota de Coleta' },
+  };
+  const info = titulos[user.perfil] || { titulo:'Randstad', sub:'Nave' };
+  document.getElementById('topoTitulo').childNodes[0].nodeValue = info.titulo + ' ';
+  document.getElementById('topoSubtitulo').textContent = info.sub;
+
+  montarMenu();
+  if(!aba) aba = primeiraAba();
+  navegar(aba);
+}
+function primeiraAba(){
+  switch(user.perfil){
+    case 'gestor': return 'dashboard';
+    case 'loja': return 'buscar';
+    case 'cliente': return 'cliente';
+    case 'motorista': return 'coleta';
+  }
+}
+function montarMenu(){
+  const p=user.perfil;
+  const abas = {
+    gestor:[
+      ['dashboard','Dashboard'],
+      ['colaboradores','Colaboradores'],
+      ['produtos','Produtos'],
+      ['importar','Importar'],
+      ['historico-import','Importações'],
+      ['lavanderia','Lavanderia'],
+      ['relatorios','Relatórios']
+    ],
+    loja:[['buscar','Registrar'],['devolvidos','Produtos devolvidos'],['aguardando','Aguardando']],
+    cliente:[['cliente','Meus Colaboradores'],['dashboardcli','Dashboard'],['historicocli','Histórico']],
+    motorista:[['coleta','Coletas'],['historico','Histórico']],
+  }[p];
+  document.getElementById('menu').innerHTML = abas.map(([id,lb])=>
+    `<button class="tab-btn" data-aba="${id}" onclick="navegar('${id}')"><span class="dot"></span><span>${lb}</span></button>`).join('');
+}
+function navegar(id){
+  aba=id;
+  document.querySelectorAll('nav.tabs .tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.aba===id));
+  ({
+    dashboard:renderDash, colaboradores:renderColab, produtos:renderProd,
+    importar:renderImport, 'historico-import':renderHistImport,
+    lavanderia:renderLavanderia, relatorios:renderRel,
+    buscar:renderBuscar, aguardando:renderAguard, devolvidos:renderDevolv,
+    cliente:renderCliente, dashboardcli:renderDashboardCliente, historicocli:renderHistoricoCliente,
+    coleta:renderColeta, historico:renderHist,
+  }[id]||renderDash)();
+}
+function toggleAcc(id){ document.getElementById(id).classList.toggle('open'); }
+function toggleSub(id){ document.getElementById(id).classList.toggle('open'); }
+
+function colaboradoresDoCliente(cliente){
+  const cpfs = new Set();
+  db.colaboradores.forEach(c=>{ if(c.cliente === cliente) cpfs.add(soNum(c.cpf)); });
+  db.devolucoes.forEach(d=>{ if(d.cliente === cliente) cpfs.add(soNum(d.cpf)); });
+  const hist = garantirHistorico(cliente);
+  hist.concluidas.forEach(x=>cpfs.add(soNum(x.cpf)));
+  hist.pendentes.forEach(x=>cpfs.add(soNum(x.cpf)));
+  (db.cobrancas||[]).forEach(x=>{ if(x.cliente===cliente) cpfs.add(soNum(x.cpf)); });
+  return db.colaboradores.filter(c=>cpfs.has(soNum(c.cpf)));
+}
+
+/* DASHBOARD */
+function garantirPeriodoDash(){
+  const anoAtual = String(new Date().getFullYear());
+  const mesAtual = String(new Date().getMonth()+1).padStart(2,'0');
+  if(!window._dashGestorAno) window._dashGestorAno = anoAtual;
+  if(!window._dashGestorMes) window._dashGestorMes = mesAtual;
+}
+function renderDash(){
+  garantirPeriodoDash();
+  const ano = window._dashGestorAno;
+  const mes = window._dashGestorMes;
+  const geral = (ano==='geral');
+  const colabsFiltrados = db.colaboradores.filter(c=> geral || colabMatchesPeriod(c, ano, mes));
+  const devsFiltradas = db.devolucoes.filter(d=> geral || devMatchesPeriod(d, ano, mes));
+  const total = colabsFiltrados.length;
+  const dev = colabsFiltrados.filter(c=>c.status!=='aguardando').length;
+  const agu = total-dev;
+  const vols = PONTOS.reduce((s,p)=>s+getVolumesPonto(p),0);
+  const periodoLabel = geral ? 'Geral (todos os períodos)' : `${MESES[+mes-1]}/${ano}`;
+
+  const clientesInfo = ['Shopee','Mercado Livre'].map(cli=>{
+    const colabCli = colaboradoresDoCliente(cli);
+    const devsCliPeriodo = db.devolucoes.filter(d=>d.cliente===cli && (geral || devMatchesPeriod(d, ano, mes)));
+    const cpfsDevPeriodo = new Set(devsCliPeriodo.map(d=>soNum(d.cpf)));
+    const concluidas = colabCli.filter(c=>cpfsDevPeriodo.has(soNum(c.cpf))).length;
+    const pendentes = colabCli.length - concluidas;
+    const pctDev = colabCli.length? Math.round(concluidas/colabCli.length*100) : 0;
+    const pctPend = colabCli.length? Math.round(pendentes/colabCli.length*100) : 0;
+    return {cli, concluidas, pendentes, totalColab:colabCli.length, pctDev, pctPend};
+  });
+
+  document.getElementById('conteudo').innerHTML=`
+    <div class="page-head">
+      <h1>${rocketIcon('md')} Dashboard</h1>
+      <p>Visão geral por ponto de coleta · <b>${periodoLabel}</b></p>
+    </div>
+    <div class="card">
+      <div class="row">
+        <div class="col-fix" style="width:160px">
+          <label style="font-size:12.5px;color:var(--muted);margin-bottom:6px;display:block;font-weight:600">Ano</label>
+          <select class="input" onchange="window._dashGestorAno=this.value;renderDash()">
+            <option value="geral" ${geral?'selected':''}>Geral</option>
+            ${[new Date().getFullYear()-1, new Date().getFullYear(), new Date().getFullYear()+1].map(a=>`<option value="${a}" ${!geral && String(a)===ano?'selected':''}>${a}</option>`).join('')}
+          </select>
+        </div>
+        <div class="col-fix" style="width:180px">
+          <label style="font-size:12.5px;color:var(--muted);margin-bottom:6px;display:block;font-weight:600">Mês</label>
+          <select class="input" ${geral?'disabled style="opacity:.5"':''} onchange="window._dashGestorMes=this.value;renderDash()">
+            ${['01','02','03','04','05','06','07','08','09','10','11','12'].map(m=>`
+              <option value="${m}" ${!geral && m===mes?'selected':''}>${MESES[+m-1]}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-4" style="margin-bottom:20px">
+      <div class="stat"><div class="l">Colaboradores</div><div class="v">${total}</div></div>
+      <div class="stat ok"><div class="l">Devolvidos</div><div class="v">${dev}</div></div>
+      <div class="stat warn"><div class="l">Aguardando</div><div class="v">${agu}</div></div>
+      <div class="stat laranja"><div class="l">Volumes totais</div><div class="v">${vols}</div></div>
+    </div>
+    <h2 style="font-size:15.5px;font-weight:700;margin:20px 0 12px;color:var(--text)">Por ponto de coleta</h2>
+    ${PONTOS.map((p,i)=>{
+      const produtos = produtosAgregados(p);
+      const volumes = getVolumesPonto(p);
+      const lista = colabsFiltrados.filter(c=>c.ponto===p);
+      const devolvidas = lista.filter(c=>c.status!=='aguardando').length;
+      const st = {total:lista.length, devolvidas, faltam:lista.length-devolvidas};
+      const sig = siglaPonto(p);
+      return `
+      <div class="acc" id="acc-${i}">
+        <div class="acc-head" onclick="toggleAcc('acc-${i}')">
+          <div class="acc-title">
+            <div class="acc-ic">${rocketIcon('sm')}<span class="sigla-badge">${sig}</span></div>
+            <div>
+              <div class="acc-name">${p}</div>
+              <div class="acc-meta">${st.total} colaboradores · ${st.devolvidas} devolvidos · ${st.faltam} pendentes</div>
+            </div>
+          </div>
+          <div class="chev"></div>
+        </div>
+        <div class="acc-body">
+          <div class="sub-acc" id="sub-prod-${i}">
+            <div class="sub-acc-head" onclick="toggleSub('sub-prod-${i}')">
+              <div class="st"><div class="bullet"></div>
+                <span class="name">Saldo Prod. Devolvidos</span>
+                <span class="badge">${produtos.length} iten(s)</span>
+              </div>
+              <div class="mini-chev"></div>
+            </div>
+            <div class="sub-acc-body"><div class="sub-acc-body-inner">
+              <div class="volumes-fixed">
+                <span class="lbl">Volumes informados pelo ponto</span>
+                <span class="val">${volumes}</span>
+              </div>
+              ${produtos.length? `
+                <div style="overflow-x:auto"><table>
+                  <thead><tr><th>Código</th><th>Descrição</th><th style="text-align:right">Qtd</th></tr></thead>
+                  <tbody>${produtos.map(pr=>`<tr><td><code>${esc(pr.codigo)}</code></td><td>${esc(pr.descricao)}</td>
+                  <td style="text-align:right;font-weight:700;color:var(--r-azul)">${pr.qtd}</td></tr>`).join('')}</tbody>
+                </table></div>` : `<div class="empty">Sem itens para coleta.</div>`}
+            </div></div>
+          </div>
+          <div class="sub-acc" id="sub-dev-${i}">
+            <div class="sub-acc-head" onclick="toggleSub('sub-dev-${i}')">
+              <div class="st"><div class="bullet" style="background:${st.faltam>0?'var(--warn)':'var(--ok)'};box-shadow:0 0 0 4px ${st.faltam>0?'rgba(176,118,0,.14)':'rgba(15,123,63,.14)'}"></div>
+                <span class="name">Saldo Devoluções</span>
+                <span class="badge">${st.devolvidas}/${st.total}</span>
+              </div>
+              <div class="mini-chev"></div>
+            </div>
+            <div class="sub-acc-body"><div class="sub-acc-body-inner">
+              <div class="saldo-line"><span class="k">Total de colaboradores no ponto</span><span class="v">${st.total}</span></div>
+              <div class="saldo-line"><span class="k">Já devolveram</span><span class="v" style="color:var(--ok)">${st.devolvidas}</span></div>
+              <div class="saldo-line"><span class="k">Faltam devolver</span><span class="v" style="color:var(--warn)">${st.faltam}</span></div>
+            </div></div>
+          </div>
+        </div>
+      </div>`;
+    }).join('')}
+
+    <h2 style="font-size:15.5px;font-weight:700;margin:28px 0 12px;color:var(--text)">Por cliente</h2>
+    ${clientesInfo.map((c,i)=>{
+      const sig = c.cli === 'Shopee' ? 'SH' : 'ML';
+      const cor = c.cli === 'Shopee' ? 'linear-gradient(135deg,#ea580c,#f97316)' : 'linear-gradient(135deg,#a16207,#eab308)';
+      const corShadow = c.cli === 'Shopee' ? 'rgba(234,88,12,.28)' : 'rgba(161,98,7,.28)';
+      return `
+      <div class="acc" id="acc-cli-${i}">
+        <div class="acc-head" onclick="toggleAcc('acc-cli-${i}')">
+          <div class="acc-title">
+            <div class="acc-ic" style="background:${cor};box-shadow:0 4px 12px ${corShadow}">
+              ${rocketIcon('sm')}<span class="sigla-badge">${sig}</span>
+            </div>
+            <div>
+              <div class="acc-name">${c.cli}</div>
+              <div class="acc-meta">${c.totalColab} colaboradores · ${c.concluidas} devolveram · ${c.pendentes} pendentes</div>
+            </div>
+          </div>
+          <div class="chev"></div>
+        </div>
+        <div class="acc-body"><div class="sub-acc-body-inner" style="padding-top:18px">
+          <div class="grid grid-3" style="margin-bottom:14px">
+            <div class="stat"><div class="l">Total Colaboradores</div><div class="v">${c.totalColab}</div></div>
+            <div class="stat ok"><div class="l">Devolveram</div><div class="v">${c.concluidas}</div></div>
+            <div class="stat warn"><div class="l">Faltam Devolver</div><div class="v">${c.pendentes}</div></div>
+          </div>
+          <div class="grid grid-2">
+            <div class="stat ok" style="background:linear-gradient(135deg,#f0fbf4,#e6f6ec)">
+              <div class="l" style="color:var(--ok)">% Devolução</div>
+              <div class="v" style="color:var(--ok)">${c.pctDev}%</div>
+            </div>
+            <div class="stat warn" style="background:linear-gradient(135deg,#fdf8e9,#fdf3d8)">
+              <div class="l" style="color:var(--warn)">% Pendência</div>
+              <div class="v" style="color:var(--warn)">${c.pctPend}%</div>
+            </div>
+          </div>
+        </div></div>
+      </div>`;
+    }).join('')}
+
+    <div class="card" style="margin-top:20px">
+      <h2>Devoluções recentes</h2>
+      <div class="sub">Últimos registros no período selecionado.</div>
+      ${devsFiltradas.length ? `
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>Código</th><th>Colaborador</th><th>Ponto</th><th>Cliente</th><th>Data</th></tr></thead>
+          <tbody>${devsFiltradas.slice(-8).reverse().map(d=>`
+            <tr><td><code>${d.codigoUnico}</code></td><td>${esc(d.nome)}</td><td>${d.ponto}</td>
+            <td>${d.cliente==='Shopee'?'<span class="client-badge sh">Shopee</span>':'<span class="client-badge ml">Mercado Livre</span>'}</td>
+            <td style="color:var(--muted);font-size:13px">${d.dataHora}</td></tr>
+          `).join('')}</tbody>
+        </table></div>
+      ` : `<div class="empty">Nenhuma devolução no período.</div>`}
+    </div>`;
+}
+
+/* COLABORADORES */
+function renderColab(){
+  const anoAtual = String(new Date().getFullYear());
+  const mesAtual = String(new Date().getMonth()+1).padStart(2,'0');
+  if(!window._colabAno) window._colabAno = anoAtual;
+  if(!window._colabMes) window._colabMes = mesAtual;
+  const geral = (window._colabAno==='geral');
+  const b=(window._bc||'').toLowerCase();
+  const lista = db.colaboradores.filter(c=>{
+    if(!geral && !colabMatchesPeriod(c, window._colabAno, window._colabMes)) return false;
+    if(!b) return true;
+    return c.nome.toLowerCase().includes(b) || soNum(c.cpf).includes(soNum(b));
+  });
+  const isGestor = user.perfil==='gestor';
+  document.getElementById('conteudo').innerHTML=`
+    <div class="page-head"><h1>${rocketIcon('md')} Colaboradores</h1><p>${db.colaboradores.length} cadastrados · ${lista.length} no filtro</p></div>
+    <div class="card">
+      <div class="row">
+        <div class="col-fix" style="width:160px">
+          <label style="font-size:12.5px;color:var(--muted);margin-bottom:6px;display:block;font-weight:600">Ano</label>
+          <select class="input" onchange="window._colabAno=this.value;renderColab()">
+            <option value="geral" ${geral?'selected':''}>Geral</option>
+            ${[new Date().getFullYear()-1, new Date().getFullYear(), new Date().getFullYear()+1].map(a=>`<option value="${a}" ${!geral && String(a)===window._colabAno?'selected':''}>${a}</option>`).join('')}
+          </select>
+        </div>
+        <div class="col-fix" style="width:180px">
+          <label style="font-size:12.5px;color:var(--muted);margin-bottom:6px;display:block;font-weight:600">Mês</label>
+          <select class="input" ${geral?'disabled style="opacity:.5"':''} onchange="window._colabMes=this.value;renderColab()">
+            ${['01','02','03','04','05','06','07','08','09','10','11','12'].map(m=>`
+              <option value="${m}" ${!geral && m===window._colabMes?'selected':''}>${MESES[+m-1]}</option>`).join('')}
+          </select>
+        </div>
+        <div class="col"><input class="input" placeholder="Buscar por nome ou CPF" value="${esc(window._bc||'')}" oninput="window._bc=this.value;renderColab()"/></div>
+        <div class="col-fix"><button class="btn danger sm" onclick="limparColab()">Limpar</button></div>
+      </div>
+    </div>
+    <div class="card">
+      ${lista.length ? `
+        <div style="overflow-x:auto"><table>
+          <thead><tr>
+            <th>Nome</th><th>CPF</th><th>Telefone</th><th>Ponto</th><th>Cliente</th><th>Inserido em</th><th>Origem</th><th>Status</th>
+            ${isGestor?'<th style="text-align:right">Ações</th>':''}
+          </tr></thead>
+          <tbody>${lista.map(c=>`<tr>
+            <td>${esc(c.nome)}</td><td><code>${esc(c.cpf)}</code></td><td>${esc(c.telefone||'-')}</td>
+            <td>${c.ponto}</td>
+            <td>${c.cliente==='Shopee'?'<span class="client-badge sh">Shopee</span>':c.cliente==='Mercado Livre'?'<span class="client-badge ml">Mercado Livre</span>':'<span class="pill cinza">—</span>'}</td>
+            <td style="color:var(--muted);font-size:13px">${c.dataInsercao||'-'}</td>
+            <td>${c.origem==='autocadastro'?'<span class="pill devolvido">Auto</span>':'<span class="pill cinza">Import</span>'}</td>
+            <td><span class="pill ${c.status}">${c.status}</span></td>
+            ${isGestor?`<td style="text-align:right;white-space:nowrap">
+              <button class="btn ghost xs" onclick="abrirModalEditar('${esc(c.cpf)}')">Editar</button>
+              <button class="btn danger xs" style="margin-left:6px" onclick="excluirColab('${esc(c.cpf)}')">Excluir</button>
+            </td>`:''}
+          </tr>`).join('')}</tbody>
+        </table></div>
+      ` : `<div class="empty">Nenhum colaborador cadastrado. Importe uma planilha ou aguarde autocadastros.</div>`}
+    </div>`;
+}
+function limparColab(){ if(confirm('Apagar TODOS os colaboradores? Essa ação não pode ser desfeita.')){db.colaboradores=[];save();renderColab();} }
+
+let _editCpfOriginal = null;
+function abrirModalEditar(cpf){
+  const c = db.colaboradores.find(x=>soNum(x.cpf)===soNum(cpf));
+  if(!c) return;
+  _editCpfOriginal = c.cpf;
+  document.getElementById('editNome').value = c.nome || '';
+  document.getElementById('editCpf').value = c.cpf || '';
+  document.getElementById('editTelefone').value = c.telefone || '';
+  document.getElementById('editEmail').value = c.email || '';
+  document.getElementById('editCliente').value = c.cliente || '';
+  document.getElementById('editPonto').value = c.ponto || 'Aurora';
+  document.getElementById('editStatus').value = c.status || 'aguardando';
+  document.getElementById('modalErro').style.display = 'none';
+  document.getElementById('modalEditar').classList.add('show');
+}
+function fecharModalEditar(){
+  document.getElementById('modalEditar').classList.remove('show');
+  _editCpfOriginal = null;
+}
+function salvarEdicao(){
+  const erro = document.getElementById('modalErro');
+  erro.style.display = 'none';
+  const nome = document.getElementById('editNome').value.trim();
+  const cpf = soNum(document.getElementById('editCpf').value);
+  const tel = document.getElementById('editTelefone').value.trim();
+  const email = document.getElementById('editEmail').value.trim();
+  const cliente = document.getElementById('editCliente').value;
+  const ponto = document.getElementById('editPonto').value;
+  const status = document.getElementById('editStatus').value;
+
+  if(!nome || nome.split(/\s+/).length < 2){ erro.style.display='block'; erro.textContent='Informe nome completo.'; return; }
+  if(!validaCPF(cpf)){ erro.style.display='block'; erro.textContent='CPF inválido.'; return; }
+  if(!tel || soNum(tel).length < 10){ erro.style.display='block'; erro.textContent='Telefone inválido.'; return; }
+
+  const c = db.colaboradores.find(x=>soNum(x.cpf)===soNum(_editCpfOriginal));
+  if(!c){ erro.style.display='block'; erro.textContent='Colaborador não encontrado.'; return; }
+  if(soNum(cpf) !== soNum(_editCpfOriginal)){
+    const outro = db.colaboradores.find(x=>soNum(x.cpf)===soNum(cpf));
+    if(outro){ erro.style.display='block'; erro.textContent='Já existe outro cadastro com este CPF.'; return; }
+  }
+
+  c.nome = nome; c.cpf = cpf; c.telefone = tel; c.email = email;
+  c.cliente = cliente; c.ponto = ponto; c.status = status;
+  save();
+  toast(`Cadastro de ${nome} atualizado.`);
+  fecharModalEditar();
+  renderColab();
+}
+function excluirColab(cpf){
+  const c = db.colaboradores.find(x=>soNum(x.cpf)===soNum(cpf));
+  if(!c) return;
+  if(!confirm(`Excluir o cadastro de "${c.nome}"?\n\nEssa ação não pode ser desfeita.\nA pessoa poderá se cadastrar novamente pelo formulário público.`)) return;
+  db.colaboradores = db.colaboradores.filter(x=>soNum(x.cpf)!==soNum(cpf));
+  save();
+  toast(`Cadastro de ${c.nome} excluído.`);
+  renderColab();
+}
+
+/* =========================================================
+   PRODUTOS — com Adicionar / Editar / Excluir
+   ========================================================= */
+function renderProd(){
+  const b = window._bp || '';
+  const clienteFiltro = window._bpCliente || '';
+  const q = normalizaTexto(b).trim();
+
+  let lista = db.produtos.filter(p=>{
+    if(clienteFiltro && p.cliente !== clienteFiltro) return false;
+    if(!q) return true;
+    return normalizaTexto(p.codigo).includes(q) || normalizaTexto(p.descricao).includes(q);
+  });
+  lista = lista.sort((a,b)=> a.codigo.localeCompare(b.codigo));
+
+  const totalGeral = db.produtos.length;
+  const totalFiltro = lista.length;
+
+  document.getElementById('conteudo').innerHTML=`
+    <div class="page-head">
+      <h1>${rocketIcon('md')} Produtos</h1>
+      <p>
+        <span class="contador-badge">📦 Total: ${totalGeral}</span>
+        ${q || clienteFiltro ? `<span class="contador-badge" style="background:#fdf3d8;color:#8a6100;margin-left:8px">🔎 No filtro: ${totalFiltro}</span>` : ''}
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="toolbar-prod">
+        <div class="search-wrap">
+          <span class="icon">🔍</span>
+          <input id="buscaProd" placeholder="Buscar por código ou descrição..." value="${esc(b)}"
+            oninput="window._bp=this.value;renderProd()"/>
+        </div>
+        <select onchange="window._bpCliente=this.value;renderProd()">
+          <option value="">Todos os clientes</option>
+          <option value="Shopee" ${clienteFiltro==='Shopee'?'selected':''}>Shopee</option>
+          <option value="Mercado Livre" ${clienteFiltro==='Mercado Livre'?'selected':''}>Mercado Livre</option>
+        </select>
+        <button class="btn primary" onclick="abrirModalProduto('novo')">
+          + Adicionar produto
+        </button>
+      </div>
+
+      ${lista.length ? `
+        <div style="overflow-x:auto"><table>
+          <thead><tr>
+            <th>Código</th><th>Descrição</th><th>Cliente</th>
+            <th style="text-align:right">Ações</th>
+          </tr></thead>
+          <tbody>${lista.map(p=>{
+            const idx = db.produtos.indexOf(p);
+            return `<tr>
+              <td><code>${esc(p.codigo)}</code></td>
+              <td>${esc(p.descricao)}</td>
+              <td>${p.cliente==='Shopee'?'<span class="client-badge sh">Shopee</span>':p.cliente==='Mercado Livre'?'<span class="client-badge ml">Mercado Livre</span>':'<span class="pill cinza">'+esc(p.cliente||'N/D')+'</span>'}</td>
+              <td style="text-align:right;white-space:nowrap">
+                <button class="btn ghost xs" onclick="abrirModalProduto('editar', ${idx})">Editar</button>
+                <button class="btn danger xs" style="margin-left:6px" onclick="excluirProduto(${idx})">Excluir</button>
+              </td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table></div>
+      ` : `
+        <div class="empty">
+          ${totalGeral === 0
+            ? 'Nenhum produto cadastrado. Clique em "+ Adicionar produto" ou importe uma planilha.'
+            : 'Nenhum produto encontrado com esse filtro.'}
+        </div>`}
+    </div>`;
+}
+
+let _prodEditIdx = null; // null = novo, número = editando
+
+function abrirModalProduto(modo, idx){
+  _prodEditIdx = (modo==='editar' && typeof idx==='number') ? idx : null;
+  const titulo = document.getElementById('modalProdTitulo');
+  const erro = document.getElementById('modalProdErro');
+  erro.style.display = 'none';
+
+  if(_prodEditIdx !== null){
+    const p = db.produtos[_prodEditIdx];
+    if(!p) return;
+    titulo.textContent = 'Editar produto';
+    document.getElementById('prodCodigo').value = p.codigo || '';
+    document.getElementById('prodDescricao').value = p.descricao || '';
+    document.getElementById('prodCliente').value = p.cliente || '';
+    document.getElementById('btnSalvarProduto').textContent = 'Salvar alterações';
+  } else {
+    titulo.textContent = 'Adicionar produto';
+    document.getElementById('prodCodigo').value = '';
+    document.getElementById('prodDescricao').value = '';
+    document.getElementById('prodCliente').value = '';
+    document.getElementById('btnSalvarProduto').textContent = 'Salvar produto';
+  }
+  document.getElementById('modalProduto').classList.add('show');
+  setTimeout(()=>{ document.getElementById('prodCodigo').focus(); }, 100);
+}
+function fecharModalProduto(){
+  document.getElementById('modalProduto').classList.remove('show');
+  _prodEditIdx = null;
+}
+function salvarProduto(){
+  const erro = document.getElementById('modalProdErro');
+  erro.style.display = 'none';
+
+  const codigo = document.getElementById('prodCodigo').value.trim();
+  const descricao = document.getElementById('prodDescricao').value.trim();
+  const cliente = document.getElementById('prodCliente').value;
+
+  if(!codigo){ erro.style.display='block'; erro.textContent='Informe o código do produto.'; return; }
+  if(!descricao){ erro.style.display='block'; erro.textContent='Informe a descrição do produto.'; return; }
+  if(!cliente){ erro.style.display='block'; erro.textContent='Selecione o cliente.'; return; }
+
+  // Verifica duplicidade (mesmo código + mesmo cliente em OUTRO produto)
+  const duplicado = db.produtos.findIndex((p, i)=>{
+    if(_prodEditIdx !== null && i === _prodEditIdx) return false;
+    return p.codigo === codigo && p.cliente === cliente;
+  });
+
+  if(duplicado >= 0){
+    const resp = confirm(`Já existe um produto com código "${codigo}" para o cliente "${cliente}".\n\nDeseja ATUALIZAR a descrição existente?`);
+    if(!resp) return;
+    db.produtos[duplicado].descricao = descricao;
+    save();
+    toast(`Produto ${codigo} atualizado.`);
+    fecharModalProduto();
+    renderProd();
+    return;
+  }
+
+  if(_prodEditIdx !== null){
+    // Edição
+    const p = db.produtos[_prodEditIdx];
+    if(!p) { erro.style.display='block'; erro.textContent='Produto não encontrado.'; return; }
+    p.codigo = codigo;
+    p.descricao = descricao;
+    p.cliente = cliente;
+    save();
+    toast(`Produto ${codigo} atualizado.`);
+  } else {
+    // Novo
+    db.produtos.push({ codigo, descricao, cliente });
+    save();
+    toast(`Produto ${codigo} adicionado.`);
+  }
+  fecharModalProduto();
+  renderProd();
+}
+function excluirProduto(idx){
+  const p = db.produtos[idx];
+  if(!p) return;
+  if(!confirm(`Excluir o produto "${p.codigo} — ${p.descricao}" (${p.cliente})?\n\nEssa ação não pode ser desfeita.\nO histórico de devoluções já registradas continuará intacto.`)) return;
+  db.produtos.splice(idx, 1);
+  save();
+  toast(`Produto ${p.codigo} excluído.`);
+  renderProd();
+}
+function limparProd(){
+  if(confirm('Apagar TODOS os produtos do catálogo? Essa ação não pode ser desfeita.')){
+    db.produtos=[];
+    save();
+    renderProd();
+    toast('Catálogo de produtos zerado.');
+  }
+}
+
+function renderImport(){
+  const totalImport = (db.importacoes||[]).length;
+  const autocad = db.colaboradores.filter(c=>c.origem==='autocadastro').length;
+  document.getElementById('conteudo').innerHTML=`
+    <div class="page-head"><h1>${rocketIcon('md')} Importar</h1><p>Planilhas .xlsx ou .csv · base: <b>${db.colaboradores.length}</b> colaboradores (${autocad} via formulário) · ${db.produtos.length} produtos · ${totalImport} lote(s).</p></div>
+
+    <div class="card" style="border-left:4px solid var(--danger)">
+      <h2>${rocketIcon('sm')} Zerar base de testes</h2>
+      <div class="sub">Apaga <b>tudo</b>: colaboradores, produtos, devoluções, importações, lavanderia, históricos e cobranças. Use antes de subir uma nova planilha do zero.</div>
+      <button class="btn danger" onclick="zerarBase()">🗑 Apagar todos os dados</button>
+    </div>
+
+    <div class="card" style="border-left:4px solid var(--r-azul)">
+      <h2>${rocketIcon('sm')} Formulário público ativo</h2>
+      <div class="sub">Pessoas desligadas podem se cadastrar sozinhas pelo link "Quero devolver meu uniforme e EPI" na tela de login. Cada cadastro entra automaticamente na base, vinculado ao cliente escolhido.</div>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="card"><h2>Colaboradores (planilha)</h2>
+        <div class="sub">Colunas: Nome · CPF · Telefone · Ponto · Cliente. Cada arquivo <b>soma</b> à base atual.</div>
+        <input type="file" accept=".xlsx,.xls,.csv" onchange="impColab(event)"/></div>
+      <div class="card"><h2>Produtos</h2>
+        <div class="sub">Colunas: Código · Descrição · Cliente.<br>
+        <b>Cliente aceita:</b> <code>SH</code> ou <code>Shopee</code> · <code>ML</code> ou <code>Mercado Livre</code></div>
+        <input type="file" accept=".xlsx,.xls,.csv" onchange="impProd(event)"/></div>
+    </div>
+
+    <div class="card"><h2>Modelos</h2>
+      <div class="sub">Baixe os arquivos de exemplo.</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn ghost sm" onclick="modelo('colab')">Colaboradores (.xlsx)</button>
+        <button class="btn ghost sm" onclick="modelo('prod')">Produtos (.xlsx)</button>
+      </div>
+    </div>`;
+}
+function ler(file,cb){const r=new FileReader();r.onload=e=>{const wb=XLSX.read(e.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];cb(XLSX.utils.sheet_to_json(ws,{defval:''}));};r.readAsArrayBuffer(file);}
+function impColab(ev){
+  const f=ev.target.files[0]; if(!f) return;
+  const nomeArquivo = f.name;
+  ler(f,rows=>{
+    let novos=0, atualizados=0, ignorados=0;
+    rows.forEach(r=>{
+      const nome=(r.Nome||r.nome||'').toString().trim();
+      const cpf=soNum(r.CPF||r.cpf||'');
+      if(!nome||!cpf){ ignorados++; return; }
+      const ponto=(r.Ponto||r.ponto||'').toString().trim();
+      const tel=(r.Telefone||r.telefone||'').toString().trim();
+      const cliente = normalizarCliente(r.Cliente||r.cliente||'');
+      const ex=db.colaboradores.find(c=>soNum(c.cpf)===cpf);
+      if(ex){ Object.assign(ex,{nome,ponto,telefone:tel}); if(cliente) ex.cliente = cliente; atualizados++; }
+      else {
+        const isoAgora = new Date().toISOString().slice(0,10);
+        db.colaboradores.push({nome,cpf,telefone:tel,ponto,cliente: cliente||'',status:'aguardando',volumes:0,dataInsercao:agora(),dataInsercaoISO:isoAgora,origem:'import'});
+        novos++;
+      }
+    });
+    if(!db.importacoes) db.importacoes=[];
+    db.importacoes.push({id: Date.now(), arquivo: nomeArquivo, dataHora: agora(), novos, atualizados, ignorados, totalApos: db.colaboradores.length});
+    save();
+    toast(`${novos} novo(s) · ${atualizados} atualizado(s) · Total: ${db.colaboradores.length}`);
+    ev.target.value='';
+    renderImport();
+  });
+}
+function impProd(ev){
+  const f=ev.target.files[0]; if(!f) return;
+  ler(f,rows=>{
+    let n=0, ignorados=0, semCliente=0;
+    rows.forEach(r=>{
+      const codigo=(r['Código']||r.Codigo||r.codigo||r['CODIGO']||r['Cod']||'').toString().trim();
+      const descricao=(r['Descrição']||r.Descricao||r.descricao||r['DESCRICAO']||r['Desc']||'').toString().trim();
+      const clienteRaw=(r.Cliente||r.cliente||r.CLIENTE||'').toString().trim();
+      if(!codigo && !descricao){ ignorados++; return; }
+      const cliente = normalizarCliente(clienteRaw);
+      if(!cliente) semCliente++;
+      const ex = db.produtos.find(p=>p.codigo===codigo && p.cliente===cliente);
+      if(ex){ ex.descricao = descricao; }
+      else { db.produtos.push({codigo, descricao, cliente}); }
+      n++;
+    });
+    save();
+    let msg = `${n} produto(s) importado(s)`;
+    if(semCliente > 0) msg += ` · ${semCliente} sem cliente definido`;
+    if(ignorados > 0) msg += ` · ${ignorados} linha(s) vazia(s)`;
+    toast(msg);
+    ev.target.value='';
+    renderImport();
+  });
+}
+function modelo(t){
+  const dados = t==='colab'
+    ? [{Nome:'João Silva',CPF:'12345678900',Telefone:'(11) 98000-0000',Ponto:'Aurora',Cliente:'SH'}]
+    : [{Código:'CAM-P',Descrição:'Camisa Polo P',Cliente:'SH'},
+       {Código:'CAL-M',Descrição:'Calça M',Cliente:'ML'}];
+  const ws=XLSX.utils.json_to_sheet(dados);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Modelo');
+  XLSX.writeFile(wb, t==='colab'?'modelo_colaboradores.xlsx':'modelo_produtos.xlsx');
+}
+function renderHistImport(){
+  const lista = (db.importacoes||[]).slice().reverse();
+  document.getElementById('conteudo').innerHTML=`
+    <div class="page-head"><h1>${rocketIcon('md')} Histórico de importações</h1><p>${lista.length} lote(s) registrado(s).</p></div>
+    <div class="card">
+      ${lista.length ? `
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>Data/Hora</th><th>Arquivo</th><th>Novos</th><th>Atualizados</th><th>Ignorados</th><th>Total após</th></tr></thead>
+          <tbody>${lista.map(l=>`<tr>
+            <td style="color:var(--muted);font-size:13px">${l.dataHora}</td>
+            <td>${esc(l.arquivo)}</td>
+            <td style="color:var(--ok);font-weight:700">${l.novos}</td>
+            <td style="color:var(--r-azul);font-weight:700">${l.atualizados}</td>
+            <td style="color:var(--muted)">${l.ignorados||0}</td>
+            <td style="font-weight:700">${l.totalApos}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>
+      ` : `<div class="empty">Nenhuma importação registrada.</div>`}
+    </div>`;
+}
+
+/* LAVANDERIA */
+function renderLavanderia(){
+  const totalColetados = db.devolucoes.filter(d=>d.coletado).length;
+  const lavanderia = (db.lavanderia||[]).slice().reverse();
+  const consolidado = produtosColetadosConsolidado();
+  const consolidadoShopee = consolidado.filter(x=>x.cliente==='Shopee')
+    .reduce((acc,x)=>{const k=x.codigo+'|'+x.descricao;if(!acc[k])acc[k]={codigo:x.codigo,descricao:x.descricao,qtd:0};acc[k].qtd+=x.qtd;return acc;}, {});
+  const consolidadoML = consolidado.filter(x=>x.cliente==='Mercado Livre')
+    .reduce((acc,x)=>{const k=x.codigo+'|'+x.descricao;if(!acc[k])acc[k]={codigo:x.codigo,descricao:x.descricao,qtd:0};acc[k].qtd+=x.qtd;return acc;}, {});
+  const listaShopee = Object.values(consolidadoShopee).sort((a,b)=>a.codigo.localeCompare(b.codigo));
+  const listaML = Object.values(consolidadoML).sort((a,b)=>a.codigo.localeCompare(b.codigo));
+  const totalShopee = listaShopee.reduce((s,x)=>s+x.qtd, 0);
+  const totalML = listaML.reduce((s,x)=>s+x.qtd, 0);
+  const volsConsolidado = volumesConsolidado();
+  document.getElementById('conteudo').innerHTML=`
+    <div class="page-head"><h1>${rocketIcon('md')} Lavanderia</h1><p>Itens coletados pelo motorista, prontos para envio à lavanderia.</p></div>
+    <div class="grid grid-3" style="margin-bottom:16px">
+      <div class="stat"><div class="l">Itens Coletados</div><div class="v">${totalColetados}</div></div>
+      <div class="stat ok"><div class="l">Envios Registrados</div><div class="v">${lavanderia.length}</div></div>
+      <div class="stat laranja"><div class="l">Volumes Enviados</div><div class="v">${lavanderia.reduce((s,l)=>s+(+l.volumes||0),0)}</div></div>
+    </div>
+    <h2 style="font-size:15.5px;font-weight:700;margin:20px 0 12px">Relação por ponto (itens coletados)</h2>
+    ${PONTOS.map((p,i)=>{
+      const produtos = produtosColetadosPorPonto(p);
+      const volumes = getVolumesPonto(p);
+      const sig = siglaPonto(p);
+      return `
+      <div class="acc" id="lav-acc-${i}">
+        <div class="acc-head" onclick="toggleAcc('lav-acc-${i}')">
+          <div class="acc-title">
+            <div class="acc-ic">${rocketIcon('sm')}<span class="sigla-badge">${sig}</span></div>
+            <div>
+              <div class="acc-name">${p}</div>
+              <div class="acc-meta">${produtos.length} item(ns) · ${volumes} volume(s)</div>
+            </div>
+          </div>
+          <div class="chev"></div>
+        </div>
+        <div class="acc-body"><div class="sub-acc-body-inner" style="padding-top:18px">
+          ${produtos.length? `
+            <div style="overflow-x:auto"><table>
+              <thead><tr><th>Código</th><th>Descrição</th><th>Cliente</th><th style="text-align:right">Qtd</th></tr></thead>
+              <tbody>${produtos.map(pr=>`<tr>
+                <td><code>${esc(pr.codigo)}</code></td>
+                <td>${esc(pr.descricao)}</td>
+                <td>${pr.cliente==='Shopee'?'<span class="client-badge sh">Shopee</span>':pr.cliente==='Mercado Livre'?'<span class="client-badge ml">Mercado Livre</span>':'<span class="pill cinza">N/D</span>'}</td>
+                <td style="text-align:right;font-weight:700;color:var(--r-azul)">${pr.qtd}</td></tr>`).join('')}</tbody>
+            </table></div>
+            <div class="volumes-fixed" style="margin-top:14px">
+              <span class="lbl">Volumes a enviar</span>
+              <div class="volumes-edit">
+                <input type="number" min="0" id="lavVols-${i}" value="${volumes}"/>
+                <button class="btn roxo sm" onclick="registrarEnvioLavanderia('${p}', ${i})">Registrar envio</button>
+              </div>
+            </div>
+          ` : `<div class="empty">Nenhum item coletado neste ponto.</div>`}
+        </div></div>
+      </div>`;
+    }).join('')}
+    <h2 style="font-size:15.5px;font-weight:700;margin:28px 0 12px">Recibos consolidados</h2>
+    <div class="acc" id="acc-recibo">
+      <div class="acc-head" onclick="toggleAcc('acc-recibo')">
+        <div class="acc-title">
+          <div class="acc-ic">${rocketIcon('sm')}<span class="sigla-badge">REC</span></div>
+          <div>
+            <div class="acc-name">Recibo Itens Enviados</div>
+            <div class="acc-meta">Consolidado dos 3 pontos · ${listaShopee.length + listaML.length} itens únicos · ${volsConsolidado} volume(s)</div>
+          </div>
+        </div>
+        <div class="chev"></div>
+      </div>
+      <div class="acc-body"><div class="sub-acc-body-inner" style="padding-top:18px">
+        <div class="recibo-bloco">
+          <div class="recibo-head">
+            <div class="recibo-titulo"><span class="cor sh"></span>Recibo · Shopee</div>
+            <div class="recibo-totais">
+              <span>Itens: <b>${listaShopee.length}</b></span>
+              <span>Unidades: <b>${totalShopee}</b></span>
+            </div>
+          </div>
+          ${listaShopee.length ? `
+            <div style="overflow-x:auto"><table>
+              <thead><tr><th>Código</th><th>Descrição</th><th style="text-align:right">Qtd</th></tr></thead>
+              <tbody>${listaShopee.map(x=>`<tr>
+                <td><code>${esc(x.codigo)}</code></td>
+                <td>${esc(x.descricao)}</td>
+                <td style="text-align:right;font-weight:700;color:var(--r-azul)">${x.qtd}</td>
+              </tr>`).join('')}</tbody>
+            </table></div>
+            <div class="export-row">
+              <button class="btn ok" onclick="exportarRecibo('Shopee','xlsx')">Planilha (.xlsx)</button>
+              <button class="btn roxo" onclick="exportarRecibo('Shopee','pdf')">PDF</button>
+            </div>
+          ` : `<div class="empty">Nenhum item Shopee coletado.</div>`}
+        </div>
+        <div class="recibo-bloco">
+          <div class="recibo-head">
+            <div class="recibo-titulo"><span class="cor ml"></span>Recibo · Mercado Livre</div>
+            <div class="recibo-totais">
+              <span>Itens: <b>${listaML.length}</b></span>
+              <span>Unidades: <b>${totalML}</b></span>
+            </div>
+          </div>
+          ${listaML.length ? `
+            <div style="overflow-x:auto"><table>
+              <thead><tr><th>Código</th><th>Descrição</th><th style="text-align:right">Qtd</th></tr></thead>
+              <tbody>${listaML.map(x=>`<tr>
+                <td><code>${esc(x.codigo)}</code></td>
+                <td>${esc(x.descricao)}</td>
+                <td style="text-align:right;font-weight:700;color:var(--r-azul)">${x.qtd}</td>
+              </tr>`).join('')}</tbody>
+            </table></div>
+            <div class="export-row">
+              <button class="btn ok" onclick="exportarRecibo('Mercado Livre','xlsx')">Planilha (.xlsx)</button>
+              <button class="btn roxo" onclick="exportarRecibo('Mercado Livre','pdf')">PDF</button>
+            </div>
+          ` : `<div class="empty">Nenhum item Mercado Livre coletado.</div>`}
+        </div>
+      </div></div>
+    </div>
+    <div class="card" style="margin-top:20px">
+      <h2>Gerar relatório geral</h2>
+      <div class="sub">Exporte o comprovante geral com envios + pendentes de todos os pontos.</div>
+      <div class="export-row">
+        <button class="btn ok" onclick="exportarLavanderia('xlsx')">Planilha geral (.xlsx)</button>
+        <button class="btn roxo" onclick="exportarLavanderia('pdf')">PDF geral</button>
+      </div>
+    </div>
+    <h2 style="font-size:15.5px;font-weight:700;margin:28px 0 12px">Histórico de envios</h2>
+    <div class="card">
+      ${lavanderia.length ? `
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>Data/Hora</th><th>Ponto</th><th>Volumes</th><th>Itens</th></tr></thead>
+          <tbody>${lavanderia.map(l=>`<tr>
+            <td style="color:var(--muted);font-size:13px">${l.dataHora}</td>
+            <td><b>${l.ponto}</b></td>
+            <td>${l.volumes}</td>
+            <td>${l.itens.length} tipo(s) · ${l.itens.reduce((s,i)=>s+i.qtd,0)} un</td>
+          </tr>`).join('')}</tbody>
+        </table></div>
+      ` : `<div class="empty">Nenhum envio registrado.</div>`}
+    </div>`;
+}
+function exportarRecibo(cliente, tipo){
+  const consolidado = produtosColetadosConsolidado().filter(x=>x.cliente===cliente);
+  if(!consolidado.length){ alert('Sem itens para este cliente.'); return; }
+  const mapa = {};
+  consolidado.forEach(x=>{
+    const k = x.codigo+'|'+x.descricao;
+    if(!mapa[k]) mapa[k] = {codigo:x.codigo, descricao:x.descricao, qtd:0};
+    mapa[k].qtd += x.qtd;
+  });
+  const itens = Object.values(mapa).sort((a,b)=>a.codigo.localeCompare(b.codigo));
+  const total = itens.reduce((s,x)=>s+x.qtd, 0);
+  const vols = volumesConsolidado();
+  const agoraStr = agora().replace(/[/:]/g,'-');
+  const nomeBase = `recibo_${cliente.replace(/\s/g,'_')}_${agoraStr}`;
+  if(tipo==='xlsx'){
+    const dados = itens.map(x=>({Cliente: cliente, Código: x.codigo, Descrição: x.descricao, Quantidade: x.qtd}));
+    const ws = XLSX.utils.json_to_sheet(dados);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, cliente.slice(0,30));
+    XLSX.writeFile(wb, nomeBase+'.xlsx');
+    toast(`Planilha do recibo ${cliente} gerada.`);
+    return;
+  }
+  try{
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const cor = cliente==='Shopee' ? [234,88,12] : [161,98,7];
+    doc.setFillColor(15,25,65);
+    doc.rect(0,0,210,26,'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(15); doc.setFont('helvetica','bold');
+    doc.text(`Randstad · Recibo ${cliente}`, 14, 12);
+    doc.setFontSize(10); doc.setFont('helvetica','normal');
+    doc.text('Envio à Lavanderia · Consolidado dos 3 pontos', 14, 19);
+    doc.setTextColor(15,18,34);
+    doc.setFontSize(10); doc.setFont('helvetica','normal');
+    doc.text(`Emitido em: ${agora()}`, 14, 34);
+    doc.text(`Cliente: ${cliente}`, 14, 40);
+    doc.text(`Itens únicos: ${itens.length} · Unidades totais: ${total} · Volumes: ${vols}`, 14, 46);
+    doc.autoTable({
+      startY: 54,
+      head: [['Código','Descrição','Qtd']],
+      body: itens.map(x=>[x.codigo, x.descricao, String(x.qtd)]),
+      styles: {fontSize:10, cellPadding:3},
+      headStyles: {fillColor: cor, textColor:255, fontStyle:'bold'},
+      alternateRowStyles: {fillColor:[245,248,253]},
+      columnStyles: {2:{halign:'right'}}
+    });
+    const yFim = doc.lastAutoTable.finalY + 10;
+    doc.setDrawColor(214,226,247);
+    doc.line(14, yFim, 196, yFim);
+    doc.setFontSize(9); doc.setTextColor(107,114,128);
+    doc.text('Assinatura do responsável: _______________________________', 14, yFim + 8);
+    doc.save(nomeBase+'.pdf');
+    toast(`PDF do recibo ${cliente} gerado.`);
+  }catch(e){ console.error(e); alert('Erro ao gerar PDF.'); }
+}
+function registrarEnvioLavanderia(ponto, idx){
+  const produtos = produtosColetadosPorPonto(ponto);
+  if(!produtos.length){ alert('Nenhum item coletado neste ponto.'); return; }
+  const inputVols = document.getElementById(`lavVols-${idx}`);
+  const vols = +inputVols.value||0;
+  if(!vols){ alert('Informe a quantidade de volumes.'); return; }
+  if(!confirm(`Registrar envio à lavanderia?\n\nPonto: ${ponto}\nVolumes: ${vols}\nItens: ${produtos.length} tipo(s)`)) return;
+  if(!db.lavanderia) db.lavanderia=[];
+  db.lavanderia.push({id: Date.now(), dataHora: agora(), ponto, volumes: vols, itens: produtos.map(p=>({codigo:p.codigo, descricao:p.descricao, qtd:p.qtd, cliente:p.cliente}))});
+  save();
+  toast(`Envio à lavanderia registrado (${ponto}) · ${vols} volume(s).`);
+  setTimeout(()=>renderLavanderia(), 500);
+}
+function exportarLavanderia(tipo){
+  const dados = [];
+  (db.lavanderia||[]).slice().reverse().forEach(l=>{
+    l.itens.forEach(it=>{
+      dados.push({Tipo:'Enviado', Data: l.dataHora, Ponto: l.ponto, Cliente: it.cliente||'-', Volume: l.volumes, Código: it.codigo, Descrição: it.descricao, Quantidade: it.qtd});
+    });
+  });
+  PONTOS.forEach(p=>{
+    const produtos = produtosColetadosPorPonto(p);
+    const vols = getVolumesPonto(p);
+    produtos.forEach(pr=>{
+      dados.push({Tipo:'Pendente', Data: '-', Ponto: p, Cliente: pr.cliente||'-', Volume: vols, Código: pr.codigo, Descrição: pr.descricao, Quantidade: pr.qtd});
+    });
+  });
+  if(!dados.length){ alert('Sem dados para exportar.'); return; }
+  const agoraStr = agora().replace(/[/:]/g,'-');
+  const arquivoBase = `lavanderia_${agoraStr}`;
+  if(tipo==='xlsx'){
+    const ws = XLSX.utils.json_to_sheet(dados);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Lavanderia');
+    XLSX.writeFile(wb, arquivoBase+'.xlsx');
+    toast('Planilha gerada.');
+    return;
+  }
+  try{
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFillColor(15,25,65);
+    doc.rect(0,0,210,26,'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(15); doc.setFont('helvetica','bold');
+    doc.text('Randstad · Envio à Lavanderia', 14, 12);
+    doc.setFontSize(10); doc.setFont('helvetica','normal');
+    doc.text('Controle de Uniformes e EPI', 14, 19);
+    doc.setTextColor(15,18,34);
+    doc.setFontSize(10); doc.setFont('helvetica','normal');
+    doc.text(`Emitido em: ${agora()}`, 14, 34);
+    const enviados = dados.filter(d=>d.Tipo==='Enviado').length;
+    const pendentes = dados.filter(d=>d.Tipo==='Pendente').length;
+    doc.text(`Linhas enviadas: ${enviados} · Linhas pendentes: ${pendentes}`, 14, 40);
+    doc.autoTable({
+      startY: 48,
+      head: [['Tipo','Ponto','Cliente','Volume','Código','Descrição','Qtd','Data']],
+      body: dados.map(d=>[d.Tipo, d.Ponto, d.Cliente, String(d.Volume), d.Código, d.Descrição, String(d.Quantidade), d.Data]),
+      styles: {fontSize:8, cellPadding:2},
+      headStyles: {fillColor:[33,117,217], textColor:255, fontStyle:'bold'},
+      alternateRowStyles: {fillColor:[245,248,253]},
+      columnStyles: {3:{halign:'center'}, 6:{halign:'center'}}
+    });
+    doc.save(arquivoBase+'.pdf');
+    toast('PDF gerado.');
+  }catch(e){ console.error(e); alert('Erro ao gerar PDF.'); }
+}
+
+/* BUSCAR / REGISTRAR DEVOLUÇÃO — cliente automático */
+function renderBuscar(){
+  const lista = db.colaboradores
+    .filter(c=>c.ponto===user.ponto && c.status==='aguardando')
+    .sort((a,b)=>a.nome.localeCompare(b.nome));
+  document.getElementById('conteudo').innerHTML=`
+    <div class="page-head"><h1>${rocketIcon('md')} Registrar devolução</h1>
+      <p>Ponto: <b>${user.ponto}</b> · ${lista.length} colaborador(es) aguardando.</p></div>
+    <div class="card">
+      <h2>1. Selecionar colaborador</h2>
+      <div class="sub">Busque por nome ou CPF. Apenas colaboradores deste ponto aparecem.</div>
+      <div class="search-select">
+        <input class="input" id="ssInput" placeholder="Digite nome ou CPF..." autocomplete="off"
+          onfocus="abrirSS()" oninput="filtrarSS(this.value)" onblur="setTimeout(fecharSS,180)"/>
+        <div class="list" id="ssList"></div>
+      </div>
+    </div>
+    <div id="formDev"></div>`;
+  window._listaSS = lista;
+  renderListaSS('');
+}
+function renderListaSS(f){
+  const el=document.getElementById('ssList'); if(!el) return;
+  const q=(f||'').toLowerCase();
+  const items=window._listaSS.filter(c=>!q || c.nome.toLowerCase().includes(q) || soNum(c.cpf).includes(soNum(q)));
+  el.innerHTML = items.length
+    ? items.map(c=>`<div class="item" onmousedown="escolherSS('${esc(c.cpf)}')">
+        <div class="name">${esc(c.nome)}</div>
+        <div class="meta">${esc(c.cpf)} · ${esc(c.telefone||'sem telefone')} · ${esc(c.cliente||'cliente não definido')}</div>
+      </div>`).join('')
+    : `<div class="item" style="color:var(--muted);cursor:default">Nenhum resultado</div>`;
+}
+function abrirSS(){ const el=document.getElementById('ssList'); if(el) el.classList.add('open'); }
+function fecharSS(){ const el=document.getElementById('ssList'); if(el) el.classList.remove('open'); }
+function filtrarSS(v){ abrirSS(); renderListaSS(v); }
+function escolherSS(cpf){
+  const c = db.colaboradores.find(x=>soNum(x.cpf)===soNum(cpf));
+  if(!c) return;
+  document.getElementById('ssInput').value = `${c.nome} — ${c.cpf}`;
+  fecharSS();
+  abrirFormDev(c);
+}
+function abrirFormDev(c){
+  window._colabAtual = c;
+  window._clienteSel = c.cliente || null;
+  window._itens = [];
+
+  const clienteBadge = c.cliente === 'Shopee' ? 'sh'
+                     : c.cliente === 'Mercado Livre' ? 'ml'
+                     : null;
+  const inicial = c.cliente === 'Shopee' ? 'SH'
+                : c.cliente === 'Mercado Livre' ? 'ML'
+                : '?';
+
+  const blocoCliente = c.cliente ? `
+      <div class="cliente-fixed">
+        <div class="badge-cliente ${clienteBadge}">${inicial}</div>
+        <div class="info-cliente">
+          <div class="label">Cliente que atuava</div>
+          <div class="valor">${esc(c.cliente)}</div>
+          <div class="dica">✓ Definido automaticamente pelo cadastro do colaborador</div>
+        </div>
+      </div>
+    ` : `
+      <div class="card" style="border-left:4px solid var(--warn);padding:0;box-shadow:none;border:0">
+        <h2>3. Selecionar o cliente</h2>
+        <div class="sub">⚠ Este colaborador não tem cliente definido no cadastro. Selecione manualmente:</div>
+        <div class="choice-group" id="choiceGroup">
+          <div class="choice" data-cli="Shopee" onclick="escolherClienteManual('Shopee')">Shopee</div>
+          <div class="choice" data-cli="Mercado Livre" onclick="escolherClienteManual('Mercado Livre')">Mercado Livre</div>
+        </div>
+      </div>
+    `;
+
+  document.getElementById('formDev').innerHTML=`
+    <div class="card">
+      <h2>2. Confirmar dados do colaborador</h2>
+      <div class="sub">Dados do cadastro.</div>
+      <div class="grid grid-3">
+        <div><div style="font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Nome</div><b>${esc(c.nome)}</b></div>
+        <div><div style="font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">CPF</div><b>${esc(c.cpf)}</b></div>
+        <div><div style="font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Telefone</div><b>${esc(c.telefone||'-')}</b></div>
+        <div><div style="font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Ponto</div><b>${c.ponto}</b></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>3. Cliente que atuava</h2>
+      ${blocoCliente}
+    </div>
+
+    <div id="areaProdutos"></div>`;
+
+  if(c.cliente){
+    renderAreaProdutos();
+  }
+}
+function escolherClienteManual(cli){
+  window._clienteSel = cli;
+  const c = window._colabAtual;
+  if(c){
+    const colab = db.colaboradores.find(x=>soNum(x.cpf)===soNum(c.cpf));
+    if(colab){ colab.cliente = cli; save(); }
+  }
+  document.querySelectorAll('#choiceGroup .choice').forEach(el=>{
+    el.classList.toggle('sel', el.dataset.cli===cli);
+  });
+  window._itens = [];
+  renderAreaProdutos();
+}
+function renderAreaProdutos(){
+  const cli = window._clienteSel;
+  const c = window._colabAtual;
+  const prodsCli = db.produtos.filter(p=>p.cliente===cli);
+  document.getElementById('areaProdutos').innerHTML=`
+    <div class="card">
+      <h2>4. Produtos devolvidos — ${cli}</h2>
+      <div class="sub">${prodsCli.length} produto(s) disponíveis neste cliente. ${prodsCli.length === 0 ? '<br><b style="color:var(--danger)">⚠ Nenhum produto cadastrado para este cliente. Importe a planilha de produtos ou adicione manualmente.</b>' : '<br>Digite o <b>código</b> ou a <b>descrição</b> (ex: <code>Full</code>, <code>cinza</code>, <code>CAM-P</code>).'}</div>
+      <div id="itensDiv"></div>
+      ${prodsCli.length ? `<button class="btn ghost sm" style="margin-top:12px" onclick="addItem()">+ Adicionar item</button>` : ''}
+      <div style="margin-top:24px">
+        <button class="btn lg" onclick="finalizar('${esc(c.cpf)}')" ${prodsCli.length===0?'disabled style="opacity:.5"':''}>Finalizar e gerar comprovante</button>
+      </div>
+    </div>`;
+  window._prodsDisponiveis = prodsCli;
+  if(prodsCli.length) addItem();
+  else document.getElementById('itensDiv').innerHTML = '<div class="empty">Sem produtos para este cliente.</div>';
+}
+function addItem(){ window._itens.push({codigo:'',descricao:'',qtd:1}); renderItens(); }
+function removerItem(i){ window._itens.splice(i,1); renderItens(); }
+function setQtd(i,v){ window._itens[i].qtd=+v||1; }
+
+function renderItens(){
+  const div=document.getElementById('itensDiv'); if(!div) return;
+  if(!window._itens.length){ div.innerHTML='<div class="empty">Nenhum item adicionado.</div>'; return; }
+  div.innerHTML=window._itens.map((it,i)=>{
+    const sel = it.codigo ? `${it.codigo} — ${it.descricao}` : '';
+    return `
+      <div class="prod-row" data-idx="${i}" style="margin-bottom:12px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fafbfd">
+        <div class="row" style="margin-bottom:10px;gap:8px">
+          <div style="flex:1;min-width:0">
+            <label style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:6px;display:block">Produto devolvido</label>
+            <div class="prod-search" data-idx="${i}">
+              <span class="ps-icon">🔍</span>
+              <input class="ps-input" type="text" placeholder="Digite o código ou a descrição..." autocomplete="off"
+                value="${esc(sel)}" oninput="psFiltrar(${i}, this.value)" onfocus="psAbrir(${i})"
+                onblur="setTimeout(()=>psFechar(${i}), 180)" onkeydown="psTeclado(event, ${i})"/>
+              <div class="ps-list" id="ps-list-${i}"></div>
+            </div>
+          </div>
+          <div style="width:100px;flex-shrink:0">
+            <label style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:6px;display:block">Qtd</label>
+            <input class="input" type="number" min="1" value="${it.qtd}" onchange="setQtd(${i}, this.value)"/>
+          </div>
+          <div style="flex-shrink:0">
+            <label style="font-size:12px;color:transparent;margin-bottom:6px;display:block">.</label>
+            <button class="btn danger sm" onclick="removerItem(${i})">Remover</button>
+          </div>
+        </div>
+        ${it.codigo ? `
+          <div class="ps-selected">
+            <span class="ps-label">✓ ${esc(it.codigo)} — ${esc(it.descricao)}</span>
+            <button class="ps-clear" type="button" onclick="limparSelecao(${i})">Trocar</button>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+}
+function psAbrir(i){
+  const list = document.getElementById(`ps-list-${i}`);
+  if(!list) return;
+  const input = document.querySelector(`.prod-search[data-idx="${i}"] .ps-input`);
+  psRenderLista(i, input ? input.value : '');
+  list.classList.add('open');
+}
+function psFechar(i){
+  const list = document.getElementById(`ps-list-${i}`);
+  if(list) list.classList.remove('open');
+}
+function psFiltrar(i, valor){
+  if(window._itens[i].codigo && valor !== `${window._itens[i].codigo} — ${window._itens[i].descricao}`){
+    window._itens[i].codigo = '';
+    window._itens[i].descricao = '';
+  }
+  psAbrir(i);
+  psRenderLista(i, valor);
+}
+function psRenderLista(i, busca){
+  const list = document.getElementById(`ps-list-${i}`);
+  if(!list) return;
+  const prods = window._prodsDisponiveis || [];
+  const q = normalizaTexto(busca).trim();
+  const isSelectedFormat = /^[^\s—]+ — /.test(busca);
+
+  let itens;
+  if(!q || isSelectedFormat){
+    itens = prods.slice(0, 30);
+  } else {
+    itens = prods.filter(p=>{
+      const codN = normalizaTexto(p.codigo);
+      const descN = normalizaTexto(p.descricao);
+      return codN.includes(q) || descN.includes(q);
+    }).slice(0, 60);
+  }
+  if(!itens.length){
+    list.innerHTML = `<div class="ps-empty">Nenhum produto encontrado para "<b>${esc(busca)}</b>"</div>`;
+    return;
+  }
+  const header = `<div class="ps-hint"><span>${itens.length} resultado(s)</span><span>↑↓ navegar · Enter seleciona</span></div>`;
+  list.innerHTML = header + itens.map((p,idx)=>`
+    <div class="ps-item" data-cod="${esc(p.codigo)}" data-idx="${idx}" onmousedown="psEscolher(${i}, '${esc(p.codigo)}')">
+      <span class="ps-cod">${esc(p.codigo)}</span>
+      <span class="ps-desc">${destacar(p.descricao, busca)}</span>
+    </div>
+  `).join('');
+}
+function psEscolher(i, codigo){
+  const prods = window._prodsDisponiveis || [];
+  const p = prods.find(x=>x.codigo===codigo);
+  if(!p) return;
+  window._itens[i].codigo = p.codigo;
+  window._itens[i].descricao = p.descricao;
+  const input = document.querySelector(`.prod-search[data-idx="${i}"] .ps-input`);
+  if(input) input.value = `${p.codigo} — ${p.descricao}`;
+  psFechar(i);
+  renderItens();
+}
+function limparSelecao(i){
+  window._itens[i].codigo = '';
+  window._itens[i].descricao = '';
+  const input = document.querySelector(`.prod-search[data-idx="${i}"] .ps-input`);
+  if(input) input.value = '';
+  setTimeout(()=>{ if(input) input.focus(); }, 50);
+  renderItens();
+}
+let _psHl = -1;
+function psTeclado(ev, i){
+  const list = document.getElementById(`ps-list-${i}`);
+  if(!list) return;
+  const itens = [...list.querySelectorAll('.ps-item')];
+  if(ev.key === 'ArrowDown'){
+    ev.preventDefault();
+    if(!list.classList.contains('open')) { psAbrir(i); return; }
+    _psHl = (_psHl + 1) % Math.max(itens.length,1);
+    itens.forEach((el,idx)=>el.classList.toggle('hl', idx===_psHl));
+    if(itens[_psHl]) itens[_psHl].scrollIntoView({block:'nearest'});
+  } else if(ev.key === 'ArrowUp'){
+    ev.preventDefault();
+    if(!list.classList.contains('open')) { psAbrir(i); return; }
+    _psHl = (_psHl - 1 + itens.length) % Math.max(itens.length,1);
+    itens.forEach((el,idx)=>el.classList.toggle('hl', idx===_psHl));
+    if(itens[_psHl]) itens[_psHl].scrollIntoView({block:'nearest'});
+  } else if(ev.key === 'Enter'){
+    if(_psHl >= 0 && itens[_psHl]){
+      ev.preventDefault();
+      psEscolher(i, itens[_psHl].dataset.cod);
+      _psHl = -1;
+    }
+  } else if(ev.key === 'Escape'){
+    psFechar(i);
+    _psHl = -1;
+  }
+}
+function finalizar(cpf){
+  if(!window._clienteSel){ alert('Cliente não definido.'); return; }
+  const itens=window._itens.filter(i=>i.codigo);
+  if(!itens.length){ alert('Adicione pelo menos um produto.'); return; }
+  const c=db.colaboradores.find(x=>soNum(x.cpf)===soNum(cpf)); if(!c) return;
+  const codigoUnico=gerarCodigo(c.cpf,c.nome,c.ponto);
+  const dev={id:Date.now(),cpf:c.cpf,nome:c.nome,telefone:c.telefone,ponto:c.ponto,
+    cliente:window._clienteSel,itens,volumes:0,codigoUnico,dataHora:agora(),coletado:false};
+  db.devolucoes.push(dev);
+  c.status='devolvido';
+  save();
+  mostrarComprovante(dev);
+}
+function mostrarComprovante(dev){
+  window._devAtual = dev;
+  document.getElementById('conteudo').innerHTML=`
+    <div class="page-head"><h1>${rocketIcon('md')} Comprovante gerado</h1><p>Registre o envio ao colaborador.</p></div>
+    <div class="card">
+      <div class="receipt">
+        <div class="rl">Código único</div>
+        <div class="qr-wrap">
+          <div class="qr-box" id="qrBox"></div>
+          <div class="qr-code-text">${dev.codigoUnico}</div>
+        </div>
+        <table style="margin-top:20px">
+          <tbody>
+            <tr><td style="color:var(--muted);width:130px">Colaborador</td><td>${esc(dev.nome)}</td></tr>
+            <tr><td style="color:var(--muted)">CPF</td><td>${esc(dev.cpf)}</td></tr>
+            <tr><td style="color:var(--muted)">Telefone</td><td>${esc(dev.telefone||'-')}</td></tr>
+            <tr><td style="color:var(--muted)">Ponto</td><td>${dev.ponto}</td></tr>
+            <tr><td style="color:var(--muted)">Cliente</td><td>${dev.cliente}</td></tr>
+            <tr><td style="color:var(--muted)">Data</td><td>${dev.dataHora}</td></tr>
+          </tbody>
+        </table>
+        <div style="margin-top:22px;color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;font-weight:700">Itens</div>
+        <table style="margin-top:8px">
+          <thead><tr><th>Produto</th><th style="text-align:right">Qtd</th></tr></thead>
+          <tbody>${dev.itens.map(i=>`<tr><td>${esc(i.descricao)}</td><td style="text-align:right"><b>${i.qtd}</b></td></tr>`).join('')}</tbody>
+        </table>
+      </div>
+      <div class="receipt-actions">
+        <button class="btn zap" onclick="enviarZap()">WhatsApp</button>
+        <button class="btn mail" onclick="enviarEmail()">E-mail</button>
+        <button class="btn ghost" onclick="window.print()">Imprimir</button>
+        <button class="btn primary" onclick="navegar('buscar')">Nova devolução</button>
+      </div>
+    </div>`;
+  gerarQR('qrBox', dev.codigoUnico);
+}
+function gerarQR(containerId, texto){
+  const box = document.getElementById(containerId);
+  if(!box) return;
+  box.innerHTML = '';
+  if(typeof QRCode === 'undefined'){
+    box.innerHTML = `<div style="color:var(--danger);font-size:12px;text-align:center;padding:20px">QR Code indisponível.</div>`;
+    return;
+  }
+  try{
+    new QRCode(box, {text: texto, width: 200, height: 200, colorDark: '#0F1941', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H});
+    setTimeout(()=>{
+      const c = box.querySelector('canvas'); const i = box.querySelector('img');
+      if(c){ c.style.display='block'; c.style.margin='0 auto'; }
+      if(i){ i.style.display='block'; i.style.margin='0 auto'; }
+    }, 50);
+  }catch(e){ console.error(e); }
+}
+async function enviarZap(){
+  const dev = window._devAtual;
+  const texto = `Comprovante de devolução Randstad\nCódigo: ${dev.codigoUnico}\nNome: ${dev.nome}\nPonto: ${dev.ponto}\nCliente: ${dev.cliente}\nData: ${dev.dataHora}`;
+  try{
+    const qrBox = document.getElementById('qrBox');
+    const canvas = qrBox?.querySelector('canvas');
+    if(canvas && navigator.canShare){
+      const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+      const file = new File([blob], `comprovante_${dev.codigoUnico}.png`, {type:'image/png'});
+      if(navigator.canShare({files:[file]})){
+        await navigator.share({ title:'Comprovante Randstad', text:texto, files:[file] });
+        return;
+      }
+    }
+    if(navigator.share){ await navigator.share({ title:'Comprovante Randstad', text:texto }); return; }
+    const tel = soNum(dev.telefone || '');
+    if(tel){ window.open(`https://wa.me/55${tel}?text=${encodeURIComponent(texto)}`, '_blank'); }
+    else { await navigator.clipboard.writeText(texto); toast('Comprovante copiado.'); }
+  }catch(e){ console.warn(e); }
+}
+function enviarEmail(){
+  const dev = window._devAtual;
+  const corpo = `Comprovante de devolução Randstad\n\nCódigo: ${dev.codigoUnico}\nNome: ${dev.nome}\nCPF: ${dev.cpf}\nPonto: ${dev.ponto}\nCliente: ${dev.cliente}\nData: ${dev.dataHora}\n\nItens devolvidos:\n${dev.itens.map(i=>`• ${i.descricao} — ${i.qtd} un`).join('\n')}`;
+  const assunto = `Comprovante de Devolução ${dev.codigoUnico}`;
+  window.open(`mailto:?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`, '_blank');
+}
+function renderDevolv(){
+  const ponto = user.ponto;
+  const produtos = produtosAgregados(ponto);
+  const volumes = getVolumesPonto(ponto);
+  const individuais = devolucoesIndividuais(ponto);
+  document.getElementById('conteudo').innerHTML=`
+    <div class="page-head">
+      <h1>${rocketIcon('md')} Produtos devolvidos</h1>
+      <p>Ponto <b>${ponto}</b> · ${individuais.length} devolução(ões) ativa(s).</p>
+    </div>
+    <div class="acc open" id="acc-dev">
+      <div class="acc-head" onclick="toggleAcc('acc-dev')">
+        <div class="acc-title">
+          <div class="acc-ic">${rocketIcon('sm')}<span class="sigla-badge">DEV</span></div>
+          <div>
+            <div class="acc-name">Produtos devolvidos — ${ponto}</div>
+            <div class="acc-meta">${produtos.length} item(ns) agregado(s) · ${volumes} volume(s)</div>
+          </div>
+        </div>
+        <div class="chev"></div>
+      </div>
+      <div class="acc-body">
+        <div class="sub-acc open" id="sub-dev-lista">
+          <div class="sub-acc-head" onclick="toggleSub('sub-dev-lista')">
+            <div class="st"><div class="bullet"></div>
+              <span class="name">Saldo atual do ponto</span>
+              <span class="badge">${produtos.length} iten(s)</span>
+            </div>
+            <div class="mini-chev"></div>
+          </div>
+          <div class="sub-acc-body"><div class="sub-acc-body-inner">
+            <div class="volumes-fixed">
+              <span class="lbl">Volumes</span>
+              <div class="volumes-edit">
+                <input type="number" min="0" id="volsPonto" value="${volumes}"/>
+                <button class="btn sm" onclick="salvarVolumesPonto('${ponto}')">Salvar</button>
+              </div>
+            </div>
+            ${produtos.length? `
+              <div style="overflow-x:auto"><table>
+                <thead><tr><th>Código</th><th>Descrição</th><th style="text-align:right">Qtd</th></tr></thead>
+                <tbody>${produtos.map(p=>`<tr><td><code>${esc(p.codigo)}</code></td><td>${esc(p.descricao)}</td>
+                <td style="text-align:right;font-weight:700;color:var(--r-azul)">${p.qtd}</td></tr>`).join('')}</tbody>
+              </table></div>` : `<div class="empty">Sem itens para coleta.</div>`}
+          </div></div>
+        </div>
+        <div class="sub-acc" id="sub-dev-ind">
+          <div class="sub-acc-head" onclick="toggleSub('sub-dev-ind')">
+            <div class="st"><div class="bullet" style="background:var(--roxo);box-shadow:0 0 0 4px rgba(109,40,217,.12)"></div>
+              <span class="name">Devoluções individuais</span>
+              <span class="badge" style="color:var(--roxo);background:#f1ebfe">${individuais.length} devolução(ões)</span>
+            </div>
+            <div class="mini-chev"></div>
+          </div>
+          <div class="sub-acc-body"><div class="sub-acc-body-inner">
+            ${individuais.length? `
+              <div style="overflow-x:auto"><table>
+                <thead><tr><th>Código</th><th>Nome</th><th>Cliente</th><th>Data</th></tr></thead>
+                <tbody>${individuais.map(d=>`<tr>
+                  <td><code>${d.codigoUnico}</code></td>
+                  <td>${esc(d.nome)}</td>
+                  <td>${d.cliente==='Shopee'?'<span class="client-badge sh">Shopee</span>':'<span class="client-badge ml">Mercado Livre</span>'}</td>
+                  <td style="color:var(--muted);font-size:13px">${d.dataHora}</td>
+                </tr>`).join('')}</tbody>
+              </table></div>` : `<div class="empty">Nenhuma devolução individual ativa.</div>`}
+          </div></div>
+        </div>
+      </div>
+    </div>`;
+}
+function salvarVolumesPonto(ponto){
+  const v = +document.getElementById('volsPonto').value||0;
+  setVolumesPonto(ponto, v);
+  toast(`Volumes do ponto ${ponto} atualizados para ${v}.`);
+}
+function renderAguard(){
+  const lista=db.colaboradores.filter(c=>c.ponto===user.ponto&&c.status==='aguardando');
+  document.getElementById('conteudo').innerHTML=`
+    <div class="page-head"><h1>${rocketIcon('md')} Aguardando</h1><p>${lista.length} colaborador(es) no ponto ${user.ponto}.</p></div>
+    <div class="card">
+      ${lista.length ? `
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>Nome</th><th>CPF</th><th>Telefone</th><th>Cliente</th></tr></thead>
+          <tbody>${lista.map(c=>`<tr><td>${esc(c.nome)}</td><td><code>${esc(c.cpf)}</code></td><td>${esc(c.telefone||'-')}</td>
+          <td>${c.cliente==='Shopee'?'<span class="client-badge sh">Shopee</span>':c.cliente==='Mercado Livre'?'<span class="client-badge ml">Mercado Livre</span>':'<span class="pill cinza">—</span>'}</td></tr>`).join('')}</tbody>
+        </table></div>
+      ` : `<div class="empty">Ninguém aguardando.</div>`}
+    </div>`;
+}
+
+/* CLIENTE */
+function renderCliente(){
+  const anoAtual = new Date().getFullYear();
+  const mesAtual = String(new Date().getMonth()+1).padStart(2,'0');
+  if(!window._cliAno) window._cliAno = String(anoAtual);
+  if(!window._cliMes) window._cliMes = mesAtual;
+  const cli = user.cliente;
+  const colabDoCliente = colaboradoresDoCliente(cli);
+  const devs = db.devolucoes.filter(d=>d.cliente===cli && devMatchesPeriod(d, window._cliAno, window._cliMes));
+  const cpfsDev = new Set(devs.map(d=>soNum(d.cpf)));
+  const concluidas = colabDoCliente.filter(c=>cpfsDev.has(soNum(c.cpf)));
+  const pendentes = colabDoCliente.filter(c=>!cpfsDev.has(soNum(c.cpf)));
+  const totalDevolucoes = concluidas.length + pendentes.length;
+
+  document.getElementById('conteudo').innerHTML=`
+    <div class="page-head"><h1>${rocketIcon('md')} ${cli}</h1><p>Colaboradores vinculados a este cliente.</p></div>
+    <div class="card">
+      <div class="row">
+        <div class="col-fix" style="width:140px">
+          <label style="font-size:12.5px;color:var(--muted);margin-bottom:6px;display:block;font-weight:600">Ano</label>
+          <select class="input" onchange="window._cliAno=this.value;renderCliente()">
+            ${[anoAtual-1, anoAtual, anoAtual+1].map(a=>`<option ${String(a)===window._cliAno?'selected':''}>${a}</option>`).join('')}
+          </select>
+        </div>
+        <div class="col-fix" style="width:160px">
+          <label style="font-size:12.5px;color:var(--muted);margin-bottom:6px;display:block;font-weight:600">Mês</label>
+          <select class="input" onchange="window._cliMes=this.value;renderCliente()">
+            ${['01','02','03','04','05','06','07','08','09','10','11','12'].map(m=>`
+              <option value="${m}" ${m===window._cliMes?'selected':''}>${MESES[+m-1]}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-3" style="margin-bottom:16px">
+      <div class="stat"><div class="l">Total Devoluções</div><div class="v">${totalDevolucoes}</div></div>
+      <div class="stat ok"><div class="l">Devoluções Concluídas</div><div class="v">${concluidas.length}</div></div>
+      <div class="stat warn"><div class="l">Devoluções Pendentes</div><div class="v">${pendentes.length}</div></div>
+    </div>
+
+    <div class="acc" id="acc-conc">
+      <div class="acc-head" onclick="toggleAcc('acc-conc')">
+        <div class="acc-title">
+          <div class="acc-ic" style="background:linear-gradient(135deg,#0f7b3f,#12a150);box-shadow:0 4px 12px rgba(15,123,63,.28)">${rocketIcon('sm')}<span class="sigla-badge">OK</span></div>
+          <div>
+            <div class="acc-name">Devoluções Concluídas</div>
+            <div class="acc-meta">${concluidas.length} colaborador(es) devolveram no período</div>
+          </div>
+        </div>
+        <div class="chev"></div>
+      </div>
+      <div class="acc-body"><div class="sub-acc-body-inner" style="padding-top:16px">
+        ${concluidas.length? `
+          <div class="bloco-actions">
+            <div class="info">Salvar remove da tela principal e move para o <b>Histórico</b> (soma acumulativa).</div>
+            <button class="btn ok sm" onclick="salvarHistoricoConcluidas('${cli}')">Salvar histórico</button>
+          </div>
+          <div style="overflow-x:auto"><table>
+            <thead><tr><th>Nome</th><th>CPF</th><th>Ponto</th><th>Código</th><th>Data</th></tr></thead>
+            <tbody>${concluidas.map(c=>{
+              const dev = devs.find(d=>soNum(d.cpf)===soNum(c.cpf));
+              return `<tr><td>${esc(c.nome)}</td><td><code>${esc(c.cpf)}</code></td><td>${c.ponto}</td>
+              <td>${dev?`<code>${dev.codigoUnico}</code>`:'-'}</td>
+              <td style="color:var(--muted);font-size:13px">${dev?dev.dataHora:'-'}</td></tr>`;
+            }).join('')}</tbody>
+          </table></div>` : `<div class="empty">Nenhuma devolução concluída no período.</div>`}
+      </div></div>
+    </div>
+
+    <div class="acc" id="acc-pend">
+      <div class="acc-head" onclick="toggleAcc('acc-pend')">
+        <div class="acc-title">
+          <div class="acc-ic" style="background:linear-gradient(135deg,#b07600,#eab308);box-shadow:0 4px 12px rgba(176,118,0,.28)">${rocketIcon('sm')}<span class="sigla-badge">PND</span></div>
+          <div>
+            <div class="acc-name">Devoluções Pendentes</div>
+            <div class="acc-meta">${pendentes.length} colaborador(es) ainda não devolveram</div>
+          </div>
+        </div>
+        <div class="chev"></div>
+      </div>
+      <div class="acc-body"><div class="sub-acc-body-inner" style="padding-top:16px">
+        ${pendentes.length? `
+          <div class="bloco-actions">
+            <div class="info">Marque como <b>Cobrado</b> quando acionar o colaborador. Depois clique em Salvar histórico.</div>
+            <button class="btn warn sm" onclick="salvarHistoricoPendentes('${cli}')">Salvar histórico</button>
+          </div>
+          <div style="overflow-x:auto"><table>
+            <thead><tr><th>Nome</th><th>CPF</th><th>Telefone</th><th>Ponto</th><th>Status</th><th style="text-align:right">Ação</th></tr></thead>
+            <tbody>${pendentes.map(c=>{
+              const cob = cobradoDe(c.cpf, cli);
+              return `<tr>
+                <td>${esc(c.nome)}</td>
+                <td><code>${esc(c.cpf)}</code></td>
+                <td>${esc(c.telefone||'-')}</td>
+                <td>${c.ponto}</td>
+                <td>${cob ? '<span class="pill cobrado">Cobrado</span>' : '<span class="pill aguardando">Pendente</span>'}</td>
+                <td style="text-align:right">
+                  ${cob ? '<span style="color:var(--muted);font-size:12.5px">—</span>' :
+                    `<button class="btn danger sm" onclick="marcarCobrado('${esc(c.cpf)}','${cli}')">Marcar cobrado</button>`}
+                </td>
+              </tr>`;
+            }).join('')}</tbody>
+          </table></div>` : `<div class="empty">Nenhuma pendência no período.</div>`}
+      </div></div>
+    </div>
+
+    <div class="card">
+      <h2>Exportar</h2>
+      <div class="sub">Escolha o conjunto de dados para baixar em Excel.</div>
+      <div class="export-row">
+        <button class="btn ok" onclick="exportarCliente('devolvidos')">Devolvidos (.xlsx)</button>
+        <button class="btn warn" onclick="exportarCliente('pendentes')">Pendentes (.xlsx)</button>
+        <button class="btn" onclick="exportarCliente('geral')">Geral (.xlsx)</button>
+      </div>
+    </div>`;
+}
+function cobradoDe(cpf, cliente){
+  if(!db.cobrancas) db.cobrancas = [];
+  return db.cobrancas.find(x=>soNum(x.cpf)===soNum(cpf) && x.cliente===cliente && !x.arquivado);
+}
+function marcarCobrado(cpf, cliente){
+  if(!db.cobrancas) db.cobrancas = [];
+  const c = db.colaboradores.find(x=>soNum(x.cpf)===soNum(cpf));
+  if(!c) return;
+  if(cobradoDe(cpf, cliente)) return;
+  db.cobrancas.push({id: Date.now(), cpf: c.cpf, nome: c.nome, telefone: c.telefone, ponto: c.ponto, cliente, dataCobranca: agora(), arquivado: false});
+  save();
+  toast(`Cobrança registrada para ${c.nome}.`);
+  renderCliente();
+}
+function salvarHistoricoConcluidas(cliente){
+  const anoAtual = window._cliAno;
+  const mesAtual = window._cliMes;
+  const devs = db.devolucoes.filter(d=>d.cliente===cliente && devMatchesPeriod(d, anoAtual, mesAtual));
+  const cpfsDev = new Set(devs.map(d=>soNum(d.cpf)));
+  const colabDoCliente = colaboradoresDoCliente(cliente);
+  const concluidas = colabDoCliente.filter(c=>cpfsDev.has(soNum(c.cpf)));
+  if(!concluidas.length){ alert('Nada para salvar.'); return; }
+  const hist = garantirHistorico(cliente);
+  concluidas.forEach(c=>{
+    const dev = devs.find(d=>soNum(d.cpf)===soNum(c.cpf));
+    hist.concluidas.push({
+      id: Date.now() + Math.random(),
+      nome: c.nome, cpf: c.cpf, ponto: c.ponto,
+      codigo: dev?.codigoUnico || '',
+      dataDevolucao: dev?.dataHora || '',
+      dataHistorico: agora()
+    });
+  });
+  const cpfsSalvos = new Set(concluidas.map(c=>soNum(c.cpf)));
+  db.devolucoes = db.devolucoes.filter(d=> !(d.cliente===cliente && cpfsSalvos.has(soNum(d.cpf))));
+  save();
+  toast(`${concluidas.length} concluída(s) salva(s) no histórico.`);
+  renderCliente();
+}
+function salvarHistoricoPendentes(cliente){
+  const anoAtual = window._cliAno;
+  const mesAtual = window._cliMes;
+  const devs = db.devolucoes.filter(d=>d.cliente===cliente && devMatchesPeriod(d, anoAtual, mesAtual));
+  const cpfsDev = new Set(devs.map(d=>soNum(d.cpf)));
+  const colabDoCliente = colaboradoresDoCliente(cliente);
+  const pendentes = colabDoCliente.filter(c=>!cpfsDev.has(soNum(c.cpf)));
+  if(!pendentes.length){ alert('Nada para salvar.'); return; }
+  const hist = garantirHistorico(cliente);
+  pendentes.forEach(c=>{
+    const cob = cobradoDe(c.cpf, cliente);
+    hist.pendentes.push({
+      id: Date.now() + Math.random(),
+      nome: c.nome, cpf: c.cpf, telefone: c.telefone, ponto: c.ponto,
+      cobrado: !!cob, dataCobranca: cob?.dataCobranca || '',
+      dataHistorico: agora()
+    });
+  });
+  if(db.cobrancas){
+    const cpfsPend = new Set(pendentes.map(c=>soNum(c.cpf)));
+    db.cobrancas.forEach(x=>{ if(x.cliente===cliente && cpfsPend.has(soNum(x.cpf))) x.arquivado = true; });
+  }
+  save();
+  toast(`${pendentes.length} pendente(s) salvo(s) no histórico.`);
+  renderCliente();
+}
+function exportarCliente(tipo){
+  const cli = user.cliente;
+  const devs = db.devolucoes.filter(d=>d.cliente===cli && devMatchesPeriod(d, window._cliAno, window._cliMes));
+  const cpfsDev = new Set(devs.map(d=>soNum(d.cpf)));
+  const colabDoCliente = colaboradoresDoCliente(cli);
+  const concluidas = colabDoCliente.filter(c=>cpfsDev.has(soNum(c.cpf)));
+  const pendentes = colabDoCliente.filter(c=>!cpfsDev.has(soNum(c.cpf)));
+  let dados = [];
+  if(tipo==='devolvidos' || tipo==='geral'){
+    concluidas.forEach(c=>{
+      const dev = devs.find(d=>soNum(d.cpf)===soNum(c.cpf));
+      dados.push({Tipo:'Devolvido', Nome:c.nome, CPF:c.cpf, Ponto:c.ponto, Código: dev?.codigoUnico||'', Data: dev?.dataHora||''});
+    });
+  }
+  if(tipo==='pendentes' || tipo==='geral'){
+    pendentes.forEach(c=>{
+      const cob = cobradoDe(c.cpf, cli);
+      dados.push({ Tipo:'Pendente', Nome:c.nome, CPF:c.cpf, Ponto:c.ponto, Código:'', Data:'', Cobrado: cob?'Sim':'Não', DataCobranca: cob?.dataCobranca||'' });
+    });
+  }
+  if(!dados.length){ alert('Sem dados para exportar.'); return; }
+  const ws=XLSX.utils.json_to_sheet(dados);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Relatorio');
+  const mesNome = MESES[+window._cliMes-1] || window._cliMes;
+  XLSX.writeFile(wb, `relacao_${tipo}_${cli.replace(/\s/g,'_')}_${mesNome}_${window._cliAno}.xlsx`);
+}
+function renderHistoricoCliente(){
+  const cli = user.cliente;
+  const hist = garantirHistorico(cli);
+  const concl = hist.concluidas;
+  const pend = hist.pendentes;
+  const conclCobrado = pend.filter(p=>p.cobrado).length;
+  const conclNaoCobrado = pend.length - conclCobrado;
+  document.getElementById('conteudo').innerHTML=`
+    <div class="page-head">
+      <h1>${rocketIcon('md')} Histórico · ${cli}</h1>
+      <p>Registros salvos anteriormente. Números acumulativos.</p>
+    </div>
+    <div class="grid grid-4" style="margin-bottom:20px">
+      <div class="stat ok"><div class="l">Concluídas (Histórico)</div><div class="v">${concl.length}</div></div>
+      <div class="stat warn"><div class="l">Pendentes (Histórico)</div><div class="v">${pend.length}</div></div>
+      <div class="stat laranja"><div class="l">Pendentes Cobrados</div><div class="v">${conclCobrado}</div></div>
+      <div class="stat cinza"><div class="l">Pendentes não Cobrados</div><div class="v">${conclNaoCobrado}</div></div>
+    </div>
+    <div class="acc" id="acc-hist-conc">
+      <div class="acc-head" onclick="toggleAcc('acc-hist-conc')">
+        <div class="acc-title">
+          <div class="acc-ic" style="background:linear-gradient(135deg,#0f7b3f,#12a150);box-shadow:0 4px 12px rgba(15,123,63,.28)">${rocketIcon('sm')}<span class="sigla-badge">HOK</span></div>
+          <div>
+            <div class="acc-name">Histórico · Entregues</div>
+            <div class="acc-meta">${concl.length} colaborador(es) já entregaram</div>
+          </div>
+        </div>
+        <div class="chev"></div>
+      </div>
+      <div class="acc-body"><div class="sub-acc-body-inner" style="padding-top:16px">
+        ${concl.length? `
+          <div style="overflow-x:auto"><table>
+            <thead><tr><th>Nome</th><th>CPF</th><th>Ponto</th><th>Código</th><th>Data Devolução</th><th>Salvo em</th></tr></thead>
+            <tbody>${concl.slice().reverse().map(x=>`<tr>
+              <td>${esc(x.nome)}</td>
+              <td><code>${esc(x.cpf)}</code></td>
+              <td>${esc(x.ponto||'-')}</td>
+              <td>${x.codigo?`<code>${esc(x.codigo)}</code>`:'-'}</td>
+              <td style="color:var(--muted);font-size:13px">${x.dataDevolucao||'-'}</td>
+              <td style="color:var(--muted);font-size:13px">${x.dataHistorico||'-'}</td>
+            </tr>`).join('')}</tbody>
+          </table></div>
+          <div class="export-row">
+            <button class="btn ghost sm" onclick="limparHistorico('${cli}','concluidas')">Limpar histórico de entregues</button>
+          </div>
+        ` : `<div class="empty">Nenhum registro no histórico de entregues.</div>`}
+      </div></div>
+    </div>
+    <div class="acc" id="acc-hist-pend">
+      <div class="acc-head" onclick="toggleAcc('acc-hist-pend')">
+        <div class="acc-title">
+          <div class="acc-ic" style="background:linear-gradient(135deg,#b07600,#eab308);box-shadow:0 4px 12px rgba(176,118,0,.28)">${rocketIcon('sm')}<span class="sigla-badge">HPN</span></div>
+          <div>
+            <div class="acc-name">Histórico · Pendentes Cobrados</div>
+            <div class="acc-meta">${pend.length} colaborador(es) · ${conclCobrado} cobrado(s)</div>
+          </div>
+        </div>
+        <div class="chev"></div>
+      </div>
+      <div class="acc-body"><div class="sub-acc-body-inner" style="padding-top:16px">
+        ${pend.length? `
+          <div style="overflow-x:auto"><table>
+            <thead><tr><th>Nome</th><th>CPF</th><th>Telefone</th><th>Ponto</th><th>Cobrado?</th><th>Data Cobrança</th><th>Salvo em</th></tr></thead>
+            <tbody>${pend.slice().reverse().map(x=>`<tr>
+              <td>${esc(x.nome)}</td>
+              <td><code>${esc(x.cpf)}</code></td>
+              <td>${esc(x.telefone||'-')}</td>
+              <td>${esc(x.ponto||'-')}</td>
+              <td>${x.cobrado ? '<span class="pill cobrado">Sim</span>' : '<span class="pill cinza">Não</span>'}</td>
+              <td style="color:var(--muted);font-size:13px">${x.dataCobranca||'-'}</td>
+              <td style="color:var(--muted);font-size:13px">${x.dataHistorico||'-'}</td>
+            </tr>`).join('')}</tbody>
+          </table></div>
+          <div class="export-row">
+            <button class="btn ghost sm" onclick="limparHistorico('${cli}','pendentes')">Limpar histórico de pendentes</button>
+          </div>
+        ` : `<div class="empty">Nenhum registro no histórico de pendentes.</div>`}
+      </div></div>
+    </div>`;
+}
+function limparHistorico(cliente, tipo){
+  if(!confirm(`Limpar todo o histórico de ${tipo==='concluidas'?'entregues':'pendentes'}? Essa ação não pode ser desfeita.`)) return;
+  const hist = garantirHistorico(cliente);
+  if(tipo==='concluidas') hist.concluidas = [];
+  else hist.pendentes = [];
+  save();
+  toast('Histórico limpo.');
+  renderHistoricoCliente();
+}
+function renderDashboardCliente(){
+  const anoAtual = new Date().getFullYear();
+  const mesAtual = String(new Date().getMonth()+1).padStart(2,'0');
+  if(!window._dashAno) window._dashAno = String(anoAtual);
+  if(!window._dashMes) window._dashMes = mesAtual;
+  const cli = user.cliente;
+  const devs = db.devolucoes.filter(d=>d.cliente===cli && devMatchesPeriod(d, window._dashAno, window._dashMes));
+  const colabDoCliente = colaboradoresDoCliente(cli);
+  const cpfsDev = new Set(devs.map(d=>soNum(d.cpf)));
+  const totalDev = colabDoCliente.filter(c=>cpfsDev.has(soNum(c.cpf))).length;
+  const totalPend = colabDoCliente.length - totalDev;
+  const pctPend = colabDoCliente.length? Math.round(totalPend/colabDoCliente.length*100) : 0;
+  const pctDev = colabDoCliente.length? Math.round(totalDev/colabDoCliente.length*100) : 0;
+  const porPonto = PONTOS.map(p=>{
+    const colabP = colabDoCliente.filter(c=>c.ponto===p);
+    const devsP = devs.filter(d=>d.ponto===p);
+    const cpfsDevP = new Set(devsP.map(d=>soNum(d.cpf)));
+    const devolvidas = colabP.filter(c=>cpfsDevP.has(soNum(c.cpf))).length;
+    const pendentes = colabP.length - devolvidas;
+    return {ponto:p, devolvidas, pendentes, total:colabP.length};
+  });
+  document.getElementById('conteudo').innerHTML=`
+    <div class="page-head"><h1>${rocketIcon('md')} Dashboard · ${cli}</h1><p>Indicadores do cliente por período.</p></div>
+    <div class="card">
+      <div class="row">
+        <div class="col-fix" style="width:140px">
+          <label style="font-size:12.5px;color:var(--muted);margin-bottom:6px;display:block;font-weight:600">Ano</label>
+          <select class="input" onchange="window._dashAno=this.value;renderDashboardCliente()">
+            ${[anoAtual-1, anoAtual, anoAtual+1].map(a=>`<option ${String(a)===window._dashAno?'selected':''}>${a}</option>`).join('')}
+          </select>
+        </div>
+        <div class="col-fix" style="width:160px">
+          <label style="font-size:12.5px;color:var(--muted);margin-bottom:6px;display:block;font-weight:600">Mês</label>
+          <select class="input" onchange="window._dashMes=this.value;renderDashboardCliente()">
+            ${['01','02','03','04','05','06','07','08','09','10','11','12'].map(m=>`
+              <option value="${m}" ${m===window._dashMes?'selected':''}>${MESES[+m-1]}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-4" style="margin-bottom:20px">
+      <div class="stat"><div class="l">Total Colaboradores</div><div class="v">${colabDoCliente.length}</div></div>
+      <div class="stat warn"><div class="l">Total Pendências</div><div class="v">${totalPend}</div></div>
+      <div class="stat ok"><div class="l">% Devolvidos</div><div class="v">${pctDev}%</div></div>
+      <div class="stat roxo"><div class="l">% Pendência</div><div class="v">${pctPend}%</div></div>
+    </div>
+    <div class="card">
+      <h2>Devoluções por ponto</h2>
+      <div class="sub">Quantidade de colaboradores devolvidos e pendentes por ponto.</div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>Ponto</th><th style="text-align:right">Devolvidas</th><th style="text-align:right">Pendentes</th><th style="text-align:right">Total</th></tr></thead>
+        <tbody>${porPonto.map(x=>`<tr>
+          <td><b>${x.ponto}</b></td>
+          <td style="text-align:right;color:var(--ok);font-weight:700">${x.devolvidas}</td>
+          <td style="text-align:right;color:var(--warn);font-weight:700">${x.pendentes}</td>
+          <td style="text-align:right">${x.total}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>`;
+}
+function renderColeta(){
+  document.getElementById('conteudo').innerHTML=`
+    <div class="page-head"><h1>${rocketIcon('md')} Coletas</h1><p>Selecione o ponto onde você está realizando a coleta.</p></div>
+    ${PONTOS.map((p,i)=>{
+      const produtos = produtosAgregados(p);
+      const volumes = getVolumesPonto(p);
+      const sig = siglaPonto(p);
+      return `
+      <div class="acc" id="coleta-acc-${i}">
+        <div class="acc-head" onclick="toggleAcc('coleta-acc-${i}')">
+          <div class="acc-title">
+            <div class="acc-ic">${rocketIcon('sm')}<span class="sigla-badge">${sig}</span></div>
+            <div>
+              <div class="acc-name">${p}</div>
+              <div class="acc-meta">${produtos.length} item(ns) · ${volumes} volume(s)</div>
+            </div>
+          </div>
+          <div class="chev"></div>
+        </div>
+        <div class="acc-body">
+          <div class="sub-acc-body-inner" style="padding-top:16px">
+            <div class="volumes-fixed">
+              <span class="lbl">Volumes no ponto</span>
+              <span class="val">${volumes}</span>
+            </div>
+            ${produtos.length? `
+              <div style="overflow-x:auto"><table>
+                <thead><tr><th>Código</th><th>Descrição</th><th style="text-align:right">Qtd</th></tr></thead>
+                <tbody>${produtos.map(pr=>`<tr><td><code>${esc(pr.codigo)}</code></td><td>${esc(pr.descricao)}</td>
+                <td style="text-align:right;font-weight:700;color:var(--r-azul)">${pr.qtd}</td></tr>`).join('')}</tbody>
+              </table></div>
+              <div style="margin-top:18px">
+                <button class="btn ok lg" onclick="coletar('${p}')">Coletar</button>
+              </div>` : `<div class="empty">Sem itens para coleta.</div>`}
+          </div>
+        </div>
+      </div>`;
+    }).join('')}`;
+}
+function coletar(ponto){
+  const produtos = produtosAgregados(ponto);
+  if(!produtos.length){ alert('Nada para coletar neste ponto.'); return; }
+  const volumes = getVolumesPonto(ponto);
+  if(!confirm(`Confirmar a coleta do ponto ${ponto}?\n\n${produtos.length} item(ns) · ${volumes} volume(s)\n\nApós confirmar, o saldo será zerado e não poderá ser desfeito.`)) return;
+  gerarPDFColeta(ponto, produtos, volumes);
+  db.devolucoes.forEach(d=>{ if(d.ponto===ponto) d.coletado=true; });
+  db.colaboradores.forEach(c=>{ if(c.ponto===ponto && c.status==='devolvido') c.status='coletado'; });
+  setVolumesPonto(ponto, 0);
+  save();
+  toast(`Coleta do ponto ${ponto} realizada com sucesso!`);
+  setTimeout(()=>{ navegar('coleta'); }, 400);
+  setTimeout(()=>{ enviarEmailColeta(ponto, produtos, volumes); }, 900);
+}
+function gerarPDFColeta(ponto, produtos, volumes){
+  try{
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const agora_ = new Date().toLocaleString('pt-BR');
+    doc.setFillColor(15,25,65);
+    doc.rect(0,0,210,26,'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(15); doc.setFont('helvetica','bold');
+    doc.text('Randstad · Comprovante de Coleta', 14, 12);
+    doc.setFontSize(10); doc.setFont('helvetica','normal');
+    doc.text('Controle de Uniformes e EPI', 14, 19);
+    doc.setTextColor(15,18,34);
+    doc.setFontSize(13); doc.setFont('helvetica','bold');
+    doc.text(`Ponto: ${ponto}`, 14, 40);
+    doc.setFontSize(10); doc.setFont('helvetica','normal');
+    doc.setTextColor(107,114,128);
+    doc.text(`Emitido em: ${agora_}`, 14, 46);
+    doc.text(`Volumes: ${volumes}`, 14, 52);
+    doc.autoTable({
+      startY: 60,
+      head: [['Código','Descrição','Qtd']],
+      body: produtos.map(p=>[p.codigo, p.descricao, String(p.qtd)]),
+      styles: {fontSize:10, cellPadding:3},
+      headStyles: {fillColor:[33,117,217], textColor:255, fontStyle:'bold'},
+      alternateRowStyles: {fillColor:[245,248,253]},
+      columnStyles: {2:{halign:'right'}}
+    });
+    const yFim = doc.lastAutoTable.finalY + 10;
+    doc.setDrawColor(214,226,247);
+    doc.line(14, yFim, 196, yFim);
+    doc.setFontSize(9); doc.setTextColor(107,114,128);
+    doc.text('Assinatura do motorista: _______________________________', 14, yFim + 8);
+    doc.save(`coleta_${ponto.replace(/\s/g,'_')}_${hoje()}.pdf`);
+    return true;
+  }catch(e){ console.error('Erro PDF:', e); return false; }
+}
+function enviarEmailColeta(ponto, produtos, volumes){
+  const agora_ = new Date().toLocaleString('pt-BR');
+  const corpo = `Coleta realizada no ponto ${ponto} em ${agora_}.\n\nVolumes: ${volumes}\nItens:\n${produtos.map(p=>`• ${p.codigo} — ${p.descricao} — ${p.qtd} un`).join('\n')}\n\nO PDF "coleta_${ponto.replace(/\s/g,'_')}_${hoje()}.pdf" foi gerado e baixado. Anexe-o a este e-mail antes de enviar.`;
+  const assunto = `Coleta realizada — ${ponto} — ${hoje()}`;
+  const dest = EMAIL_GESTOR && EMAIL_GESTOR.trim();
+  const url = `mailto:${dest}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`;
+  try{ const w = window.open(url, '_blank'); if(!w) window.location.href = url; }catch(e){ console.warn('mailto falhou:', e); }
+}
+function renderHist(){
+  const l=db.devolucoes.filter(d=>d.coletado).reverse();
+  document.getElementById('conteudo').innerHTML=`
+    <div class="page-head"><h1>${rocketIcon('md')} Histórico de coletas</h1><p>${l.length} registro(s).</p></div>
+    <div class="card">
+      ${l.length ? `
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>Código</th><th>Nome</th><th>Ponto</th><th>Cliente</th><th>Data</th></tr></thead>
+          <tbody>${l.map(d=>`<tr><td><code>${d.codigoUnico}</code></td><td>${esc(d.nome)}</td><td>${d.ponto}</td>
+          <td>${d.cliente}</td><td style="color:var(--muted);font-size:13px">${d.dataHora}</td></tr>`).join('')}</tbody>
+        </table></div>
+      ` : `<div class="empty">Nada coletado.</div>`}
+    </div>`;
+}
+function renderRel(){
+  const mes=window._mes||new Date().toISOString().slice(0,7);
+  const ref=mes.split('-').reverse().join('/');
+  const linhas=PONTOS.map(p=>{
+    const devs=db.devolucoes.filter(d=>d.ponto===p&&d.dataHora.includes(ref));
+    return {p,n:devs.length,v:devs.reduce((s,d)=>s+(+d.volumes||0),0)};
+  });
+  const tN=linhas.reduce((s,x)=>s+x.n,0);
+  const tV=linhas.reduce((s,x)=>s+x.v,0);
+  document.getElementById('conteudo').innerHTML=`
+    <div class="page-head"><h1>${rocketIcon('md')} Relatórios</h1><p>Devoluções por ponto e mês.</p></div>
+    <div class="card">
+      <div class="row">
+        <div class="col-fix" style="width:220px">
+          <label style="font-size:12.5px;color:var(--muted);margin-bottom:6px;display:block;font-weight:600">Mês</label>
+          <input class="input" type="month" value="${mes}" onchange="window._mes=this.value;renderRel()"/>
+        </div>
+        <div class="col-fix"><button class="btn ghost" onclick="exportRel('${mes}')">Exportar (.xlsx)</button></div>
+      </div>
+    </div>
+    <div class="grid grid-4" style="margin-bottom:16px">
+      <div class="stat"><div class="l">Devoluções</div><div class="v">${tN}</div></div>
+      <div class="stat laranja"><div class="l">Volumes</div><div class="v">${tV}</div></div>
+    </div>
+    <div class="card">
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>Ponto</th><th>Devoluções</th><th>Volumes</th></tr></thead>
+        <tbody>${linhas.map(x=>`<tr><td><b>${x.p}</b></td><td>${x.n}</td><td>${x.v}</td></tr>`).join('')}</tbody>
+      </table></div>
+    </div>`;
+}
+function exportRel(mes){
+  const ref=mes.split('-').reverse().join('/');
+  const dados=[];
+  PONTOS.forEach(p=>{
+    db.devolucoes.filter(d=>d.ponto===p&&d.dataHora.includes(ref)).forEach(d=>{
+      dados.push({Ponto:p,Código:d.codigoUnico,Nome:d.nome,Cliente:d.cliente,Data:d.dataHora,Coletado:d.coletado?'Sim':'Não'});
+    });
+  });
+  if(!dados.length){ alert('Sem dados no mês selecionado.'); return; }
+  const ws=XLSX.utils.json_to_sheet(dados);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Relatório');
+  XLSX.writeFile(wb,`relatorio_${mes}.xlsx`);
+}
+
+(function(){
+  const s=sessionStorage.getItem('randstad_user');
+  if(s){ user=JSON.parse(s); boot(); }
+  else {
+    document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')fazerLogin()});
+  }
+})();
+</script>
+</body>
+</html>
