@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#2175D9">
+  <title>Teste de acesso · Devoluções Randstad</title>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+  <style>
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;padding:22px;display:grid;place-items:center;background:#f5f7fb;color:#14213d;font:16px system-ui,-apple-system,"Segoe UI",sans-serif}
+    main{width:min(100%,520px);background:#fff;border:1px solid #e4e8f0;border-radius:22px;padding:28px;box-shadow:0 16px 48px rgba(33,117,217,.12)}
+    header{text-align:center;margin-bottom:24px}.mark{width:92px;height:92px;border-radius:50%;margin:auto;background:linear-gradient(145deg,#0F1941,#2175D9);display:grid;place-items:center;color:white;font-size:43px}h1{font-size:24px;margin:10px 0 6px}p{line-height:1.5;color:#566176;margin:8px 0}
+    .note{background:#eef4fc;border:1px solid #d0e2f7;border-radius:12px;padding:12px;font-size:14px;margin-bottom:20px}
+    label{display:block;font-weight:650;font-size:14px;margin:15px 0 6px}input{width:100%;padding:13px 14px;border:1px solid #cbd5e1;border-radius:10px;font:inherit}
+    input:focus{outline:3px solid #d0e2f7;border-color:#2175d9}button{width:100%;border:0;border-radius:10px;padding:14px;background:#2175d9;color:#fff;font:700 16px system-ui;cursor:pointer;margin-top:18px}
+    button.secondary{background:#eef4fc;color:#174f93;margin-top:10px}.status{padding:12px;border-radius:10px;margin-top:16px;white-space:pre-wrap;overflow-wrap:anywhere}.status:empty{display:none}.status.ok{background:#e6f6ec;color:#14532d}.status.err{background:#fdeceb;color:#8f1d18}.status.info{background:#eef4fc;color:#174f93}
+    .result{margin-top:16px;border-top:1px solid #e4e8f0;padding-top:12px}.result p{margin:7px 0}.small{font-size:12px;color:#6b7280;margin-top:18px}
+    [hidden]{display:none!important}
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div class="mark" aria-hidden="true">🚀</div>
+      <h1>Teste de acesso</h1>
+      <p>Devoluções Randstad</p>
+    </header>
+    <div class="note"><strong>Teste limitado:</strong> verifica o login e a leitura do próprio perfil no Firestore. Não consulta nem grava colaboradores, devoluções ou outros dados de negócio. Não use CPFs reais.</div>
+    <form id="loginForm">
+      <label for="email">E-mail da conta</label>
+      <input id="email" type="email" autocomplete="username" required>
+      <label for="password">Senha</label>
+      <input id="password" type="password" autocomplete="current-password" required>
+      <button id="submitBtn" type="submit">Verificar acesso</button>
+    </form>
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+    <section id="result" class="result" hidden>
+      <p><strong>Login e leitura do próprio perfil:</strong> concluídos.</p>
+      <p><strong>Nome:</strong> <span id="profileName"></span></p>
+      <p><strong>Perfil:</strong> <span id="profileRole"></span></p>
+      <button id="signOutBtn" class="secondary" type="button">Sair da conta de teste</button>
+    </section>
+    <p class="small">Página temporária de teste. Não verifica sincronização entre aparelhos e não é a versão final.</p>
+  </main>
+<script>
+(function(){
+  // Configuração web pública; a autorização real deve estar nas regras do Firebase.
+  const firebaseConfig={
+    apiKey:'AIzaSyD6l8626bhW6XRuuFkkJT1XEGB08nyDBvg',
+    authDomain:'devo-randstad.firebaseapp.com',
+    projectId:'devo-randstad',
+    appId:'1:816074666066:web:c10791cbdeaa32bfd2ef8b'
+  };
+  if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  const auth=firebase.auth();
+  const firestore=firebase.firestore();
+  const $=id=>document.getElementById(id);
+  const form=$('loginForm'), status=$('status'), submit=$('submitBtn'), result=$('result');
+  const labels={gestor:'Gestor',estoque:'Estoque',motorista:'Motorista',ponto:'Ponto',cliente:'Cliente'};
+  const setStatus=(text,kind)=>{status.textContent=text;status.className='status '+(kind||'');};
+  form.addEventListener('submit',async function(event){
+    event.preventDefault();submit.disabled=true;submit.textContent='Verificando…';result.hidden=true;
+    setStatus('Conectando e consultando somente o seu perfil…','info');
+    try{
+      await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+      const credential=await auth.signInWithEmailAndPassword($('email').value.trim(),$('password').value);
+      $('password').value='';
+      const profileDoc=await firestore.collection('usuarios').doc(credential.user.uid).get();
+      if(!profileDoc.exists) throw new Error('O login funcionou, mas não foi encontrado um perfil para esta conta.');
+      const profile=profileDoc.data()||{};
+      const role=String(profile.perfil||'').trim().toLowerCase();
+      $('profileName').textContent=profile.nome||credential.user.email||'—';
+      $('profileRole').textContent=labels[role]||role||'Não definido';
+      result.hidden=false;form.hidden=true;
+      setStatus('Acesso confirmado. Este resultado não testa sincronização.','ok');
+    }catch(error){
+      $('password').value='';
+      const code=error&&error.code||'';
+      const msg=code==='auth/unauthorized-domain'?'Este endereço de teste ainda não está autorizado no Firebase Authentication.':
+        (code==='permission-denied'||code==='firestore/permission-denied')?'O login foi aceito, mas as regras não permitiram ler o próprio perfil.':
+        (code==='auth/invalid-email'?'Confira o formato do e-mail.':
+        ((code.startsWith('auth/')?'E-mail ou senha inválidos.':error.message)||'Não foi possível concluir o teste.'));
+      setStatus(msg,'err');
+    }finally{submit.disabled=false;submit.textContent='Verificar acesso';}
+  });
+  $('signOutBtn').addEventListener('click',async function(){
+    try{await auth.signOut();}catch(_){}
+    result.hidden=true;form.hidden=false;form.reset();setStatus('Sessão encerrada.','info');
+  });
+})();
+</script>
+</body>
+</html>
