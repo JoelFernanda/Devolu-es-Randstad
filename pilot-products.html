@@ -127,10 +127,11 @@
     clearMessages();
     $('loginButton').disabled = true;
     try {
-      await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION);
+      const initialized = window.RandstadAuth.initialize();
+      await initialized.auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
       profile = await window.RandstadAuth.signIn($('email').value.trim(), $('password').value);
       const role = String(profile.perfilBanco || profile.perfil || '').toLowerCase();
-      const { firestore } = window.RandstadAuth.initialize();
+      const { firestore } = initialized;
       repository = window.RandstadProductsRepository.create({ firestore, profile, syncEnabled: true });
       $('login').style.display = 'none';
       $('app').style.display = 'block';
