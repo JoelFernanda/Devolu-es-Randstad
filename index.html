@@ -4,7 +4,33 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <meta name="theme-color" content="#2175D9"/>
-<title>Randstad · Devoluções</title>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Devoluções"/>
+<link rel="manifest" href="./manifest.webmanifest"/>
+<link rel="icon" type="image/svg+xml" href="./assets/app-icon.svg"/>
+<link rel="apple-touch-icon" href="./pwa-icons/apple-touch-icon.png"/>
+<title>Devoluções Randstad</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-check-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+<script src="./firebase-config.js"></script>
+<script src="./firebase-app-check-config.js"></script>
+<script src="./firebase-app-check.js"></script>
+<script src="./access-policy.js"></script>
+<script src="./firebase-auth.js"></script>
+<script src="./local-backup.js"></script>
+<script src="./firestore-pii-state.js"></script>
+<script src="./firestore-pii-repository.js"></script>
+<script src="./firestore-products.js"></script>
+<script src="./firestore-import-history.js"></script>
+<script src="./firestore-individual-collection.js"></script>
+<script src="./firestore-points.js"></script>
+<script src="./firestore-public-intake-submit.js"></script>
+<script src="./firestore-public-intake.js"></script>
+<script src="./import-preview.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -881,12 +907,12 @@
       <div class="desc">Informe suas credenciais para continuar.</div>
       <div id="loginErro" class="erro"></div>
       <div class="field">
-        <label>Usuário</label>
-        <input id="loginUser" class="input" autocomplete="off" placeholder="gestor"/>
+        <label>E-mail</label>
+        <input id="loginUser" class="input" type="email" autocomplete="username" placeholder="nome@empresa.com"/>
       </div>
       <div class="field">
         <label>Senha</label>
-        <input id="loginPass" class="input" type="password" autocomplete="off" placeholder="••••"/>
+        <input id="loginPass" class="input" type="password" autocomplete="current-password" placeholder="Sua senha"/>
       </div>
       <button class="btn full" onclick="fazerLogin()">
         <svg class="rocket-icon sm" viewBox="0 0 120 120"><use href="#rocket-svg"/></svg>
@@ -894,15 +920,49 @@
       </button>
       <a class="link-colab" onclick="abrirColabPublico()">
         <svg class="rocket-icon sm" viewBox="0 0 120 120"><use href="#rocket-svg"/></svg>
-        Quero devolver meu uniforme e EPI
+        Sou colaborador / Quero devolver meu uniforme e EPI
       </a>
-      <div class="creds-hint">
-        <b>gestor</b>/123 · <b>aurora</b>/123 · <b>franco</b>/123 · <b>barueri</b>/123<br/>
-        <b>shopee</b>/123 · <b>mercado</b>/123 · <b>motorista</b>/123
-      </div>
+      <div class="desc" style="margin-top:12px">Acesso individual com e-mail e senha.</div>
     </div>
   </div>
 </div>
+
+<!-- LOCAL_BACKUP_PANEL_START -->
+<main id="localBackupApp" class="hidden" style="max-width:760px;padding-top:36px">
+  <div class="page-head">
+    <h1>Backup local protegido</h1>
+    <p>Modo temporário exclusivo do gestor. Nenhum dado é enviado ao Firebase neste fluxo.</p>
+  </div>
+  <div class="card">
+    <div style="background:var(--warn-soft);color:var(--warn);border:1px solid var(--line-2);border-radius:10px;padding:12px;margin-bottom:18px;font-size:13px">
+      O backup contém dados pessoais. Salve os arquivos em local protegido. Exportar e restaurar só funcionam com todas as sincronizações desligadas.
+    </div>
+    <p id="localBackupMessage" role="status" style="margin-bottom:16px;color:var(--muted)">Sessão de gestor autenticada.</p>
+    <button class="btn" type="button" onclick="exportarBackupLocal()">Baixar backup atual</button>
+    <hr style="margin:24px 0;border:0;border-top:1px solid var(--line)">
+    <h2 style="font-size:18px;margin-bottom:6px">Restaurar de um arquivo</h2>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:14px">A restauração substitui a base local deste navegador. Primeiro confira a prévia e baixe a cópia de segurança atual.</p>
+    <div class="field">
+      <label for="localBackupFile">Arquivo JSON do backup</label>
+      <input id="localBackupFile" class="input" type="file" accept=".json,application/json" onchange="prepararBackupLocal(this)">
+    </div>
+    <p id="localBackupPreview" class="hint" style="white-space:pre-line;margin-bottom:14px"></p>
+    <button id="localBackupRollbackButton" class="btn ghost" type="button" onclick="baixarRollbackBackupLocal()" disabled>Baixar cópia atual para recuperação</button>
+    <div id="localBackupConfirmBlock" class="hidden" style="margin-top:18px">
+      <label style="display:flex;align-items:flex-start;gap:9px;margin-bottom:14px;color:var(--text-2);font-size:13px">
+        <input id="localBackupRollbackCheck" type="checkbox" onchange="atualizarConfirmacaoBackupLocal()" style="margin-top:3px">
+        Conferi que a cópia atual apareceu nos downloads e está salva em local protegido.
+      </label>
+      <div class="field">
+        <label for="localBackupConfirmText">Para autorizar a substituição, digite RESTAURAR</label>
+        <input id="localBackupConfirmText" class="input" type="text" autocomplete="off" oninput="atualizarConfirmacaoBackupLocal()">
+      </div>
+      <button id="localBackupRestoreButton" class="btn danger" type="button" onclick="restaurarBackupLocal()" disabled>Substituir a base local</button>
+    </div>
+    <button class="btn ghost" type="button" onclick="logout()" style="margin-left:8px">Sair</button>
+  </div>
+</main>
+<!-- LOCAL_BACKUP_PANEL_END -->
 
 <div id="colabApp" class="hidden">
   <div class="wrap">
@@ -913,17 +973,17 @@
     </div>
 
     <section id="colabInicio" class="card">
-      <h2 style="text-align:center">Vamos começar!</h2>
-      <div class="sub" style="text-align:center">Seu cadastro leva menos de 1 minuto.</div>
-      <button class="btn-primary" onclick="colabAbrirFormulario()">Iniciar cadastro</button>
+      <h2 style="text-align:center">Sou colaborador</h2>
+      <div class="sub" style="text-align:center">Informe seus dados e escolha o ponto onde vai devolver seu uniforme e EPI.</div>
+      <button class="btn-primary" onclick="colabAbrirFormulario()">Continuar</button>
       <div class="back-link" style="margin-top:18px">
         <button onclick="fecharColabPublico()">← Voltar para o login</button>
       </div>
     </section>
 
     <section id="colabForm" class="card hidden">
-      <h2>Preencha seus dados</h2>
-      <div class="sub">Todos os campos são obrigatórios.</div>
+      <h2>Cadastro de devolução</h2>
+      <div class="sub">Preencha seus dados e selecione o ponto. Os itens serão registrados pela equipe quando você comparecer presencialmente.</div>
       <div id="colabErro" class="erro"></div>
       <form id="colabCadastro" onsubmit="colabSalvar(event)">
         <div class="campo">
@@ -959,52 +1019,14 @@
             <option value="Barueri">Barueri — Happy Shop</option>
           </select>
         </div>
-        <button type="submit" class="btn-primary">Salvar cadastro</button>
+        <button id="colabSubmit" type="submit" class="btn-primary">Confirmar cadastro</button>
       </form>
     </section>
 
-    <section id="colabConfirm" class="card hidden">
-      <div class="sucesso-banner">
+    <section id="colabConfirm" class="card hidden" style="text-align:center">
+      <div class="sucesso-banner" style="justify-content:center">
         <div class="ic">✓</div>
-        <div style="font-size:17px;font-weight:800;color:var(--ok);letter-spacing:-.02em">Cadastro realizado com sucesso!</div>
-      </div>
-
-      <h2 style="text-align:center">Seu protocolo de atendimento</h2>
-      <div class="sub" style="text-align:center">Apresente este número no ponto de devolução.</div>
-
-      <div class="protocolo-box">
-        <div class="lbl">Protocolo</div>
-        <div class="protocolo" id="colabProtocolo"></div>
-      </div>
-
-      <div class="protocolo-actions">
-        <button class="btn-secondary" onclick="copiarProtocolo()">
-          <span id="btnCopiarTexto">📋 Copiar protocolo</span>
-        </button>
-        <button class="btn-secondary" onclick="window.print()">
-          🖨 Imprimir
-        </button>
-      </div>
-
-      <div class="aviso-guarde">
-        <div class="ic-aviso">!</div>
-        <div>
-          <b>Guarde este protocolo.</b><br>
-          Você vai precisar dele no ponto de devolução. Tire um print da tela ou anote o número para não esquecer.
-        </div>
-      </div>
-
-      <div class="local">
-        <div class="local-nome" id="colabNomeLocal"></div>
-        <div id="colabDadosLocal"></div>
-      </div>
-
-      <div style="margin-top:14px;font-size:12.5px;color:var(--muted);text-align:center">
-        Cadastro registrado em <b id="colabHora"></b>
-      </div>
-
-      <div style="margin-top:22px">
-        <button class="btn-primary" onclick="colabConcluir()">Concluir</button>
+        <div id="colabConfirmacaoNome" style="font-size:17px;font-weight:800;color:var(--ok);letter-spacing:-.02em">Cadastro confirmado! Até breve.</div>
       </div>
     </section>
   </div>
@@ -1134,14 +1156,31 @@
 
 const KEY='randstad_dev_v19';
 const EMAIL_GESTOR = 'joel.santos@randstad.com.br';
+const FIRESTORE_DATA_SYNC_READY = true;
+const FIRESTORE_PRODUCTS_SYNC_READY = true;
+const FIRESTORE_POINTS_SYNC_READY = true;
+const FIRESTORE_INDIVIDUAL_COLLECTION_READY = true;
+const FIRESTORE_PUBLIC_INTAKE_REVIEW_READY = false;
+// Kill switch: keep public intake closed until its atomic remote flow replaces both legacy handlers.
+const PUBLIC_INTAKE_SAFE_READY = false;
+// Closed until PII reads/writes are separated from the legacy whole-db localStorage flow.
+const FIRESTORE_PII_REGISTRATION_READY = true;
 
 let db = loadDB();
+let remoteProducts = [];
+let remotePointVolumes = Object.create(null);
 function loadDB(){
+  if(anyFirestoreBusinessGateOpen()) return seed();
   const raw = localStorage.getItem(KEY);
   if(raw) return JSON.parse(raw);
   return seed();
 }
-function save(){ localStorage.setItem(KEY, JSON.stringify(db)); }
+function save(){
+  if(anyFirestoreBusinessGateOpen()){
+    throw new Error('A gravação integral em localStorage está bloqueada durante a sincronização Firebase.');
+  }
+  localStorage.setItem(KEY, JSON.stringify(db));
+}
 
 function seed(){
   return {
@@ -1160,20 +1199,214 @@ function seed(){
   };
 }
 
-const USERS = [
-  { user:'gestor',    pass:'123', perfil:'gestor',    nome:'Gestor',          email:EMAIL_GESTOR, subtitulo:'Comando Geral' },
-  { user:'aurora',    pass:'123', perfil:'loja',      nome:'Aurora',          ponto:'Aurora',          subtitulo:'Base de Operações' },
-  { user:'franco',    pass:'123', perfil:'loja',      nome:'Franco da Rocha', ponto:'Franco da Rocha', subtitulo:'Base de Operações' },
-  { user:'barueri',   pass:'123', perfil:'loja',      nome:'Barueri',         ponto:'Barueri',         subtitulo:'Base de Operações' },
-  { user:'shopee',    pass:'123', perfil:'cliente',   nome:'Shopee',          cliente:'Shopee',        subtitulo:'Painel do Cliente' },
-  { user:'mercado',   pass:'123', perfil:'cliente',   nome:'Mercado Livre',   cliente:'Mercado Livre', subtitulo:'Painel do Cliente' },
-  { user:'motorista', pass:'123', perfil:'motorista', nome:'Motorista',                                subtitulo:'Rota de Coleta' },
-];
 let user = null;
 let aba = null;
+let authProfileScopeKey = null;
+function anyFirestoreBusinessGateOpen(){
+  return FIRESTORE_DATA_SYNC_READY || FIRESTORE_PII_REGISTRATION_READY ||
+    FIRESTORE_PRODUCTS_SYNC_READY || FIRESTORE_POINTS_SYNC_READY ||
+    FIRESTORE_INDIVIDUAL_COLLECTION_READY || FIRESTORE_PUBLIC_INTAKE_REVIEW_READY;
+}
+function rejectLegacyWrite(message='Esta operação local está pausada até a migração segura.'){
+  if(!anyFirestoreBusinessGateOpen()) return false;
+  toast(message,'erro');
+  return true;
+}
+function businessDataSyncActive(){
+  return FIRESTORE_DATA_SYNC_READY && FIRESTORE_PII_REGISTRATION_READY;
+}
+function productsSyncActive(){
+  return FIRESTORE_DATA_SYNC_READY && FIRESTORE_PRODUCTS_SYNC_READY;
+}
+function pointsSyncActive(){
+  return FIRESTORE_DATA_SYNC_READY && FIRESTORE_POINTS_SYNC_READY;
+}
+function individualCollectionSyncActive(){
+  return FIRESTORE_DATA_SYNC_READY && FIRESTORE_POINTS_SYNC_READY
+    && FIRESTORE_INDIVIDUAL_COLLECTION_READY;
+}
+function publicIntakeReviewActive(){
+  return FIRESTORE_PUBLIC_INTAKE_REVIEW_READY;
+}
+function publicIntakeReviewOnlyMode(profile=user){
+  const role=String(profile && (profile.perfilBanco||profile.perfil)||'').toLowerCase();
+  return role==='gestor' && publicIntakeReviewActive()
+    && !businessDataSyncActive() && !productsSyncActive();
+}
+function publicIntakeSubmissionActive(){
+  return PUBLIC_INTAKE_SAFE_READY && FIRESTORE_PUBLIC_INTAKE_REVIEW_READY;
+}
+function currentCollaborators(){
+  if(businessDataSyncActive()){
+    if(!window.RandstadPiiState) throw new Error('O estado pessoal em memória não carregou.');
+    return window.RandstadPiiState.listCollaborators(user);
+  }
+  return db.colaboradores;
+}
+function currentProducts(){
+  if(productsSyncActive()) return remoteProducts.map(product=>({...product}));
+  return db.produtos;
+}
+function currentReturns(){
+  if(businessDataSyncActive()){
+    if(!window.RandstadPiiState) throw new Error('O estado pessoal em memória não carregou.');
+    return window.RandstadPiiState.listReturns(user);
+  }
+  return db.devolucoes;
+}
+function findCollaboratorForUi(identifier){
+  if(businessDataSyncActive()){
+    if(!window.RandstadPiiState) throw new Error('O estado pessoal em memória não carregou.');
+    return window.RandstadPiiState.getCollaborator(user, identifier);
+  }
+  return db.colaboradores.find(item=>soNum(item.cpf)===soNum(identifier)) || null;
+}
+function blockUnmigratedPiiView(){
+  if(!anyFirestoreBusinessGateOpen()) return false;
+  const content=document.getElementById('conteudo');
+  if(content) content.innerHTML='<div class="page-head"><h1>Área em migração segura</h1></div><div class="card"><div class="empty">Este painel ainda depende de módulos locais sem fluxo remoto validado; nenhum dado legado será exibido enquanto a migração não terminar.</div></div>';
+  return true;
+}
+function createIndividualCollectionRepository(){
+  if(!individualCollectionSyncActive()) throw new Error('A coleta individual sincronizada continua bloqueada.');
+  if(!window.RandstadIndividualCollection || !window.RandstadAuth){
+    throw new Error('O módulo de coleta individual não carregou.');
+  }
+  const {firestore} = window.RandstadAuth.initialize();
+  return window.RandstadIndividualCollection.create({
+    firestore,
+    profile:user,
+    syncEnabled:true,
+    serverTimestamp:()=>window.firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+function createPointsRepository(){
+  if(!pointsSyncActive()) throw new Error('A sincronização dos volumes dos pontos continua bloqueada.');
+  if(!window.RandstadPointsRepository || !window.RandstadAuth){
+    throw new Error('O repositório de pontos não carregou.');
+  }
+  const {firestore} = window.RandstadAuth.initialize();
+  return window.RandstadPointsRepository.create({firestore, profile:user, syncEnabled:true});
+}
+function createPublicIntakeReviewRepository(){
+  if(!publicIntakeReviewActive()) throw new Error('A revisão de cadastros públicos continua bloqueada.');
+  if(!user || String(user.perfilBanco||user.perfil||'').toLowerCase()!=='gestor'){
+    throw new Error('Somente o gestor pode revisar cadastros públicos.');
+  }
+  if(!window.RandstadPublicIntakeReview || !window.RandstadAuth){
+    throw new Error('O módulo de revisão de cadastros públicos não carregou.');
+  }
+  const {firestore} = window.RandstadAuth.initialize();
+  return window.RandstadPublicIntakeReview.create({
+    firestore, profile:user, syncEnabled:true,
+    serverTimestamp:()=>window.firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+function createPublicIntakeSubmitRepository(){
+  if(!publicIntakeSubmissionActive()) throw new Error('O cadastro público ainda não está liberado.');
+  if(!window.RandstadPublicIntakeSubmit || !window.RandstadAuth){
+    throw new Error('O módulo de cadastro público não carregou.');
+  }
+  const {firestore} = window.RandstadAuth.initialize();
+  return window.RandstadPublicIntakeSubmit.create({
+    firestore, syncEnabled:true,
+    serverTimestamp:()=>window.firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+async function loadPointVolumesFromFirestore(profile=user){
+  if(!pointsSyncActive()){
+    remotePointVolumes=Object.create(null);
+    return remotePointVolumes;
+  }
+  const role=String(profile && (profile.perfilBanco||profile.perfil)||'').toLowerCase();
+  if(!['gestor','estoque','ponto','motorista'].includes(role)){
+    remotePointVolumes=Object.create(null);
+    return remotePointVolumes;
+  }
+  const rows=await createPointsRepository().listReadable();
+  const next=Object.create(null);
+  for(const row of rows){
+    const pointId=window.RandstadPointsRepository.normalizePoint(row.id || row.ponto);
+    if(!pointId || row.ponto!==pointId || !Number.isSafeInteger(row.volumes) || row.volumes<0){
+      throw new Error('Um total remoto de volumes tem formato inválido.');
+    }
+    next[pointId]=row.volumes;
+  }
+  let expected=[];
+  if(['gestor','estoque'].includes(role) || (role==='motorista' && !profile.ponto)) expected=PONTOS;
+  else if(['ponto','motorista'].includes(role)){
+    const own=window.RandstadPointsRepository.normalizePoint(profile.ponto);
+    if(!own) throw new Error('O ponto associado à conta não é válido.');
+    expected=[own];
+  }
+  expected.forEach(point=>{
+    if(!Object.prototype.hasOwnProperty.call(next,point)) next[point]=null;
+  });
+  remotePointVolumes=next;
+  return remotePointVolumes;
+}
+function createPiiRepository(profile=user){
+  if(!businessDataSyncActive()) throw new Error('A sincronização dos registros pessoais continua bloqueada.');
+  if(!window.RandstadPiiRepository || !window.RandstadAuth){
+    throw new Error('O repositório de registros pessoais não carregou.');
+  }
+  const {firestore} = window.RandstadAuth.initialize();
+  return window.RandstadPiiRepository.create({
+    firestore,
+    profile,
+    syncEnabled:true,
+    serverTimestamp:()=>window.firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+async function loadPiiStateFromFirestore(profile=user){
+  if(!businessDataSyncActive()) return false;
+  if(!window.RandstadPiiState) throw new Error('O estado pessoal em memória não carregou.');
+  await window.RandstadPiiState.hydrate(profile, createPiiRepository(profile));
+  return true;
+}
+function createProductsRepository(){
+  if(!productsSyncActive()) throw new Error('A sincronização de produtos continua bloqueada.');
+  if(!window.RandstadProductsRepository || !window.RandstadAuth){
+    throw new Error('O módulo de sincronização de produtos não carregou.');
+  }
+  const {firestore} = window.RandstadAuth.initialize();
+  return window.RandstadProductsRepository.create({firestore, profile:user, syncEnabled:true});
+}
+function createImportHistoryRepository(){
+  if(!businessDataSyncActive()) throw new Error('A sincronização de negócios continua bloqueada.');
+  if(!window.RandstadImportHistoryRepository || !window.RandstadAuth){
+    throw new Error('O módulo de histórico de importações não carregou.');
+  }
+  const {firestore} = window.RandstadAuth.initialize();
+  return window.RandstadImportHistoryRepository.create({
+    firestore, profile:user, syncEnabled:true,
+    serverTimestamp:()=>window.firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+function productSyncError(error){
+  if(error && !error.code && error.message) return error.message;
+  return 'Não foi possível sincronizar o catálogo. Nenhuma alteração foi salva.';
+}
+async function loadProductsFromFirestore(){
+  if(!productsSyncActive()) return false;
+  const role=String(user && (user.perfilBanco||user.perfil)||'').toLowerCase();
+  if(role==='cliente'){
+    remoteProducts=[];
+    return true;
+  }
+  const products = await createProductsRepository().list();
+  remoteProducts = products.map(p=>({
+    codigo:p.codigo, descricao:p.descricao, cliente:p.cliente, productKey:p.productKey
+  }));
+  return true;
+}
 
 const PONTOS = ['Aurora','Franco da Rocha','Barueri'];
+const normalizePointUi = value => String(value||'').trim()==='Vila Aurora' ? 'Aurora' : String(value||'').trim();
 const hoje = ()=>{const d=new Date();return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`};
+function localMonthKey(date=new Date()){
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
+}
 const agora = ()=>new Date().toLocaleString('pt-BR');
 const soNum = s => (s||'').toString().replace(/\D/g,'');
 const esc = s => (s??'').toString().replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -1235,6 +1468,7 @@ function toast(msg, tipo){
 }
 
 function gerarCodigo(cpf, nome, ponto){
+  if(rejectLegacyWrite('A geração local de protocolo está pausada até a migração segura.')) return '';
   const partes = (nome||'').trim().split(/\s+/);
   const primeiraNome = (partes[0]||'X')[0].toUpperCase();
   const primeiraSobrenome = (partes.length>1 ? partes[partes.length-1] : 'X')[0].toUpperCase();
@@ -1249,12 +1483,33 @@ function gerarCodigo(cpf, nome, ponto){
   return `${primeiraNome}${mes}${ano}${letraPonto}${seq}${primeiraSobrenome}`;
 }
 
-function getVolumesPonto(ponto){ return db.volumesPorPonto[ponto] ?? 0; }
-function setVolumesPonto(ponto, val){ db.volumesPorPonto[ponto] = +val||0; save(); }
+function getVolumesPonto(ponto){
+  if(pointsSyncActive()){
+    const pointId=window.RandstadPointsRepository?.normalizePoint(ponto);
+    if(!pointId || !Object.prototype.hasOwnProperty.call(remotePointVolumes,pointId)){
+      throw new Error('Os volumes remotos do ponto ainda não foram carregados.');
+    }
+    return remotePointVolumes[pointId];
+  }
+  return db.volumesPorPonto[ponto] ?? 0;
+}
+async function setVolumesPonto(ponto, val){
+  if(pointsSyncActive()){
+    const saved=await createPointsRepository().setVolume(ponto,val);
+    remotePointVolumes[saved.id]=saved.volumes;
+    return saved;
+  }
+  if(rejectLegacyWrite()) return false;
+  const volume=Number(val);
+  if(!Number.isSafeInteger(volume) || volume<0) throw new Error('O volume deve ser um número inteiro não negativo.');
+  db.volumesPorPonto[ponto] = volume;
+  save();
+  return {id:ponto,ponto,volumes:volume};
+}
 
 function produtosAgregados(ponto){
   const mapa = {};
-  db.devolucoes.filter(d=>d.ponto===ponto && !d.coletado).forEach(d=>{
+  currentReturns().filter(d=>d.ponto===ponto && !d.coletado).forEach(d=>{
     d.itens.forEach(it=>{
       const k = it.codigo+'|'+it.descricao;
       if(!mapa[k]) mapa[k] = {codigo:it.codigo, descricao:it.descricao, qtd:0};
@@ -1265,7 +1520,7 @@ function produtosAgregados(ponto){
 }
 function produtosColetadosPorPonto(ponto){
   const mapa = {};
-  db.devolucoes.filter(d=>d.ponto===ponto && d.coletado).forEach(d=>{
+  currentReturns().filter(d=>d.ponto===ponto && d.coletado).forEach(d=>{
     d.itens.forEach(it=>{
       const k = it.codigo+'|'+it.descricao+'|'+(d.cliente||'');
       if(!mapa[k]) mapa[k] = {codigo: it.codigo, descricao: it.descricao, cliente: d.cliente || 'N/D', qtd: 0};
@@ -1276,8 +1531,9 @@ function produtosColetadosPorPonto(ponto){
 }
 function produtosColetadosConsolidado(){
   const mapa = {};
+  const devolucoes = currentReturns();
   PONTOS.forEach(p=>{
-    db.devolucoes.filter(d=>d.ponto===p && d.coletado).forEach(d=>{
+    devolucoes.filter(d=>d.ponto===p && d.coletado).forEach(d=>{
       d.itens.forEach(it=>{
         const k = (d.cliente||'N/D') + '|' + it.codigo + '|' + it.descricao;
         if(!mapa[k]) mapa[k] = {cliente: d.cliente || 'N/D', codigo: it.codigo, descricao: it.descricao, qtd: 0};
@@ -1289,7 +1545,7 @@ function produtosColetadosConsolidado(){
 }
 function volumesConsolidado(){ return PONTOS.reduce((s,p)=>s+getVolumesPonto(p), 0); }
 function devolucoesIndividuais(ponto){
-  return db.devolucoes.filter(d=>d.ponto===ponto && !d.coletado).sort((a,b)=>a.nome.localeCompare(b.nome));
+  return currentReturns().filter(d=>d.ponto===ponto && !d.coletado).sort((a,b)=>a.nome.localeCompare(b.nome));
 }
 function devMatchesPeriod(dev, ano, mes){
   if(!ano || !mes) return true;
@@ -1305,6 +1561,8 @@ function colabMatchesPeriod(colab, ano, mes){
   return (+yyyy === +ano) && (+mm === +mes);
 }
 function garantirHistorico(cliente){
+  if(anyFirestoreBusinessGateOpen()) return { concluidas: [], pendentes: [] };
+  const existente = db.historicoCliente && db.historicoCliente[cliente];
   if(!db.historicoCliente) db.historicoCliente = {};
   if(!db.historicoCliente[cliente]) db.historicoCliente[cliente] = { concluidas: [], pendentes: [] };
   if(!db.historicoCliente[cliente].concluidas) db.historicoCliente[cliente].concluidas = [];
@@ -1319,6 +1577,11 @@ function normalizarCliente(valor){
   return valor.toString().trim();
 }
 function zerarBase(){
+  if(rejectLegacyWrite()) return;
+  if(!window.RandstadAccessPolicy || !window.RandstadAccessPolicy.canEraseBase(user)){
+    toast('Somente o gestor pode apagar toda a base.','erro');
+    return;
+  }
   if(!confirm('⚠ ATENÇÃO!\n\nIsso vai APAGAR TODOS os dados do sistema:\n\n• Colaboradores\n• Produtos\n• Devoluções\n• Importações\n• Lavanderia\n• Históricos\n• Cobranças\n\nEssa ação NÃO PODE ser desfeita.\n\nDeseja continuar?')) return;
   if(!confirm('🚨 Tem CERTEZA ABSOLUTA?\n\nDepois desta ação não há como voltar atrás.\n\nClique OK para apagar TUDO.')) return;
   db = seed();
@@ -1331,6 +1594,11 @@ function zerarBase(){
 let _colabDev = null;
 
 function abrirColabPublico(){
+  if(!publicIntakeSubmissionActive()){
+    _colabDev=null;
+    toast('O cadastro online ainda não está liberado.','erro');
+    return;
+  }
   document.getElementById('login').classList.add('hidden');
   document.getElementById('colabApp').classList.remove('hidden');
   document.getElementById('colabInicio').classList.remove('hidden');
@@ -1345,6 +1613,12 @@ function fecharColabPublico(){
   document.getElementById('login').classList.remove('hidden');
 }
 function colabAbrirFormulario(){
+  if(!publicIntakeSubmissionActive()){
+    _colabDev=null;
+    const erro=document.getElementById('colabErro');
+    if(erro){ erro.style.display='block'; erro.textContent='O cadastro online ainda não está liberado.'; }
+    return;
+  }
   document.getElementById('colabInicio').classList.add('hidden');
   document.getElementById('colabForm').classList.remove('hidden');
 }
@@ -1382,9 +1656,14 @@ function validaCPF(cpf){
   if(resto !== parseInt(cpf[10])) return false;
   return true;
 }
-function colabSalvar(ev){
+async function colabSalvar(ev){
   ev.preventDefault();
   const erro = document.getElementById('colabErro');
+  if(!publicIntakeSubmissionActive()){
+    erro.style.display='block';
+    erro.textContent='O cadastro online ainda não está liberado.';
+    return;
+  }
   const nome = document.getElementById('colabNome').value.trim();
   const cpfFormat = document.getElementById('colabCpf').value.trim();
   const cpf = soNum(cpfFormat);
@@ -1410,85 +1689,38 @@ function colabSalvar(ev){
   if(!cliente){ erro.style.display='block'; erro.textContent = 'Selecione o cliente.'; return; }
   if(!ponto){ erro.style.display='block'; erro.textContent = 'Selecione o ponto de devolução.'; return; }
 
-  const existente = db.colaboradores.find(c=>soNum(c.cpf)===cpf);
-  if(existente){
-    erro.style.display='block';
-    erro.innerHTML = `<b>CPF já cadastrado!</b><br/>Já existe um cadastro com este CPF para <b>${esc(existente.nome)}</b> (ponto ${esc(existente.ponto)}).<br/>Se já se cadastrou, dirija-se ao ponto escolhido.`;
-    return;
-  }
-
   _colabDev = { nome, cpf, telefone: tel, email, ponto, cliente };
-  const codigoUnico = gerarCodigo(cpf, nome, ponto);
-  _colabDev.codigoUnico = codigoUnico;
-
-  const info = PONTOS_INFO[ponto];
-  document.getElementById('colabNomeLocal').textContent = info.nome;
-  document.getElementById('colabDadosLocal').innerHTML =
-    `<strong>Endereço:</strong> ${esc(info.endereco)}<br>` +
-    `<strong>Atendimento:</strong> ${esc(info.horario)}<br>` +
-    `<strong>Telefone para dúvidas:</strong> ${esc(info.telefone)}`;
-  document.getElementById('colabProtocolo').textContent = codigoUnico;
-  document.getElementById('colabHora').textContent = agora();
-  document.getElementById('btnCopiarTexto').textContent = '📋 Copiar protocolo';
-
-  document.getElementById('colabForm').classList.add('hidden');
-  document.getElementById('colabConfirm').classList.remove('hidden');
+  await colabConcluir();
 }
-function copiarProtocolo(){
-  const texto = _colabDev?.codigoUnico || '';
-  if(!texto) return;
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(texto).then(()=>{
-      document.getElementById('btnCopiarTexto').textContent = '✓ Copiado!';
-      setTimeout(()=>{ document.getElementById('btnCopiarTexto').textContent = '📋 Copiar protocolo'; }, 2000);
-    }).catch(()=>{ copiarFallback(texto); });
-  } else { copiarFallback(texto); }
-}
-function copiarFallback(texto){
-  const ta = document.createElement('textarea');
-  ta.value = texto;
-  ta.style.position = 'fixed';
-  ta.style.opacity = '0';
-  document.body.appendChild(ta);
-  ta.select();
+async function colabConcluir(){
+  const erro = document.getElementById('colabErro');
+  const submitButton = document.getElementById('colabSubmit');
+  if(!publicIntakeSubmissionActive()){
+    if(erro){
+      erro.style.display='block';
+      erro.textContent='O cadastro online ainda não está liberado.';
+    }
+    return false;
+  }
+  if(!_colabDev) return false;
+  if(submitButton) submitButton.disabled=true;
+  if(erro) erro.style.display='none';
   try{
-    document.execCommand('copy');
-    document.getElementById('btnCopiarTexto').textContent = '✓ Copiado!';
-    setTimeout(()=>{ document.getElementById('btnCopiarTexto').textContent = '📋 Copiar protocolo'; }, 2000);
-  }catch(e){ alert('Protocolo: ' + texto); }
-  document.body.removeChild(ta);
-}
-function colabConcluir(){
-  if(!_colabDev) return;
-  const d = _colabDev;
-  const isoAgora = new Date().toISOString().slice(0,10);
-
-  const novoColab = {
-    nome: d.nome, cpf: d.cpf, telefone: d.telefone, email: d.email,
-    ponto: d.ponto, cliente: d.cliente,
-    status: 'aguardando', volumes: 0,
-    dataInsercao: agora(), dataInsercaoISO: isoAgora,
-    origem: 'autocadastro',
-    codigoProtocolo: d.codigoUnico
-  };
-  db.colaboradores.push(novoColab);
-
-  if(!db.importacoes) db.importacoes = [];
-  db.importacoes.push({
-    id: Date.now(),
-    arquivo: 'Devolução via formulário público',
-    dataHora: agora(),
-    novos: 1, atualizados: 0, ignorados: 0,
-    totalApos: db.colaboradores.length
-  });
-
-  save();
-  toast(`Cadastro efetivado! Protocolo ${d.codigoUnico}`);
-  _colabDev = null;
-
-  document.getElementById('colabApp').classList.add('hidden');
-  document.getElementById('login').classList.remove('hidden');
-  document.getElementById('colabCadastro').reset();
+    await createPublicIntakeSubmitRepository().submit(_colabDev);
+    document.getElementById('colabConfirmacaoNome').textContent = 'Cadastro confirmado! Até breve.';
+    document.getElementById('colabForm').classList.add('hidden');
+    document.getElementById('colabConfirm').classList.remove('hidden');
+    _colabDev = null;
+    return true;
+  }catch(error){
+    if(erro){
+      erro.style.display='block';
+      erro.textContent='Não foi possível confirmar o cadastro. Tente novamente mais tarde.';
+    }
+    return false;
+  }finally{
+    if(submitButton) submitButton.disabled=false;
+  }
 }
 
 document.addEventListener('DOMContentLoaded', ()=>{
@@ -1502,17 +1734,293 @@ document.addEventListener('DOMContentLoaded', ()=>{
   if(elEditTel) elEditTel.addEventListener('input', e => { e.target.value = mascaraTelefone(e.target.value); });
 });
 
-/* LOGIN / BOOT */
-function fazerLogin(){
-  const u=document.getElementById('loginUser').value.trim().toLowerCase();
-  const p=document.getElementById('loginPass').value.trim();
-  const e=document.getElementById('loginErro');
-  const m=USERS.find(x=>x.user===u&&x.pass===p);
-  if(!m){e.style.display='block';e.textContent='Credenciais inválidas.';return}
-  user=m; sessionStorage.setItem('randstad_user',JSON.stringify(m)); boot();
+/* LOGIN / BOOT — Firebase Authentication + perfil Firestore */
+function exibirErroLogin(mensagem){
+  const el = document.getElementById('loginErro');
+  if(!el) return;
+  el.textContent = mensagem || 'Não foi possível entrar. Tente novamente.';
+  el.style.display = 'block';
 }
-function logout(){ sessionStorage.removeItem('randstad_user'); location.reload(); }
+function authScopeKey(perfil){
+  return JSON.stringify({
+    uid: String(perfil.uid || ''),
+    role: String(perfil.perfilBanco || perfil.perfil || ''),
+    point: String(perfil.pontoKey || perfil.ponto || ''),
+    client: String(perfil.cliente || ''),
+    modules: Array.isArray(perfil.modulosPermitidos) ? [...perfil.modulosPermitidos].sort() : []
+  });
+}
+async function aplicarPerfilFirebase(perfil){
+  if(!perfil){
+    clearImportPreviewState();
+    if(window.RandstadPiiState) window.RandstadPiiState.clear();
+    remoteProducts = [];
+    remotePointVolumes = Object.create(null);
+    authProfileScopeKey = null;
+    user = null;
+    aba = null;
+    document.getElementById('login').classList.remove('hidden');
+    document.getElementById('localBackupApp').classList.add('hidden');
+    resetLocalBackupFlow();
+    document.getElementById('topo').classList.add('hidden');
+    document.getElementById('menu').classList.add('hidden');
+    document.getElementById('conteudo').classList.add('hidden');
+    document.getElementById('credits').classList.add('hidden');
+    return;
+  }
+  const nextScopeKey = authScopeKey(perfil);
+  if(authProfileScopeKey === nextScopeKey) return;
+  if(authProfileScopeKey && authProfileScopeKey !== nextScopeKey){
+    clearImportPreviewState();
+    if(window.RandstadPiiState) window.RandstadPiiState.clear();
+    remoteProducts = [];
+    remotePointVolumes = Object.create(null);
+    aba = null;
+  }
+  authProfileScopeKey = nextScopeKey;
+  const profileRole=String(perfil.perfilBanco||perfil.perfil||'').toLowerCase();
+  if(profileRole==='motorista'){
+    if(!individualCollectionSyncActive()){
+      exibirErroLogin('A fila sanitizada do motorista ainda não está liberada. Nenhum dado pessoal foi carregado.');
+      window.RandstadAuth.signOut().catch(()=>{});
+      return;
+    }
+    if(window.RandstadPiiState) window.RandstadPiiState.clear();
+    remoteProducts=[];
+    user={...perfil,nome:perfil.nome||perfil.email};
+    document.getElementById('loginErro').style.display='none';
+    try{
+      await loadPointVolumesFromFirestore(user);
+      boot();
+    }catch(error){
+      remotePointVolumes=Object.create(null);
+      authProfileScopeKey=null;
+      user=null;
+      exibirErroLogin('Não foi possível carregar os totais autorizados do ponto. A sessão foi encerrada sem alterar dados.');
+      window.RandstadAuth.signOut().catch(()=>{});
+    }
+    return;
+  }
+  if(publicIntakeReviewOnlyMode(perfil)){
+    bootPublicIntakeReviewOnly(perfil);
+    await renderPublicIntakeReview();
+    return;
+  }
+  if(!businessDataSyncActive() || !productsSyncActive()){
+    if(profileRole==='gestor' && !anyFirestoreBusinessGateOpen()){ 
+      user={...perfil,nome:perfil.nome||perfil.email};
+      resetLocalBackupFlow();
+      document.getElementById('login').classList.add('hidden');
+      document.getElementById('localBackupApp').classList.remove('hidden');
+      document.getElementById('topo').classList.add('hidden');
+      document.getElementById('menu').classList.add('hidden');
+      document.getElementById('conteudo').classList.add('hidden');
+      document.getElementById('credits').classList.add('hidden');
+      document.getElementById('colabApp').classList.add('hidden');
+      document.getElementById('localBackupMessage').textContent='Sessão de gestor autenticada. Modo local, sem sincronização de dados comerciais.';
+      return;
+    }
+    exibirErroLogin('A autenticação está configurada, mas os dados pessoais e o catálogo ainda não estão sincronizados com segurança. Nenhum dado comercial foi carregado.');
+    window.RandstadAuth.signOut().catch(()=>{});
+    return;
+  }
+  if(perfil.perfilBanco === 'estoque' && !perfil.acessoConfigurado){
+    exibirErroLogin('O acesso do setor Estoque ainda está aguardando a definição dos módulos pelo gestor.');
+    window.RandstadAuth.signOut().catch(()=>{});
+    return;
+  }
+  user = {...perfil, nome: perfil.nome || perfil.email};
+  document.getElementById('loginErro').style.display = 'none';
+  try{
+    await loadProductsFromFirestore();
+    await loadPiiStateFromFirestore(user);
+    await loadPointVolumesFromFirestore(user);
+    boot();
+  }catch(error){
+    clearImportPreviewState();
+    if(window.RandstadPiiState) window.RandstadPiiState.clear();
+    remoteProducts = [];
+    remotePointVolumes = Object.create(null);
+    authProfileScopeKey = null;
+    user = null;
+    exibirErroLogin('Não foi possível carregar os dados sincronizados. A sessão foi encerrada sem alterar os dados.');
+    window.RandstadAuth.signOut().catch(()=>{});
+  }
+}
+/* LOCAL_BACKUP_HANDLERS_START */
+let localBackupRestorePlan=null;
+let localBackupRollbackDownloaded=false;
+function localBackupStorage(){return localStorage;}
+function recarregarAppAposBackup(){location.reload();}
+function localBackupGates(){
+  return {
+    data:FIRESTORE_DATA_SYNC_READY,
+    products:FIRESTORE_PRODUCTS_SYNC_READY,
+    points:FIRESTORE_POINTS_SYNC_READY,
+    individualCollection:FIRESTORE_INDIVIDUAL_COLLECTION_READY,
+    publicIntakeReview:FIRESTORE_PUBLIC_INTAKE_REVIEW_READY,
+    publicIntake:PUBLIC_INTAKE_SAFE_READY,
+    piiRegistration:FIRESTORE_PII_REGISTRATION_READY
+  };
+}
+function resetLocalBackupFlow(){
+  localBackupRestorePlan=null;
+  localBackupRollbackDownloaded=false;
+  const file=document.getElementById('localBackupFile');
+  const preview=document.getElementById('localBackupPreview');
+  const rollbackButton=document.getElementById('localBackupRollbackButton');
+  const confirmBlock=document.getElementById('localBackupConfirmBlock');
+  const confirmText=document.getElementById('localBackupConfirmText');
+  const confirmCheck=document.getElementById('localBackupRollbackCheck');
+  const restoreButton=document.getElementById('localBackupRestoreButton');
+  if(file) file.value='';
+  if(preview) preview.textContent='';
+  if(rollbackButton) rollbackButton.disabled=true;
+  if(confirmBlock) confirmBlock.classList.add('hidden');
+  if(confirmText) confirmText.value='';
+  if(confirmCheck) confirmCheck.checked=false;
+  if(restoreButton) restoreButton.disabled=true;
+}
+function downloadLocalBackupFile(text,filename){
+  const blob=new Blob([text],{type:'application/json;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement('a');
+  link.href=url;
+  link.download=filename;
+  link.style.display='none';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+function localBackupFilename(prefix='randstad-backup'){
+  const d=new Date();
+  const stamp=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0'),'-',String(d.getHours()).padStart(2,'0'),String(d.getMinutes()).padStart(2,'0'),String(d.getSeconds()).padStart(2,'0'),'-',String(d.getMilliseconds()).padStart(3,'0')].join('');
+  return `${prefix}-${stamp}.json`;
+}
+function localBackupSourceData(){
+  const raw=localBackupStorage().getItem(window.RandstadLocalBackup.STORAGE_KEY);
+  if(raw===null) return db;
+  let stored;
+  try{stored=JSON.parse(raw);}catch(_){throw new Error('A base local não pôde ser lida; nenhum arquivo foi criado.');}
+  if(JSON.stringify(stored)!==JSON.stringify(db)){
+    throw new Error('A base local mudou desde a abertura da sessão; atualize a página antes de exportar.');
+  }
+  return stored;
+}
+function resumoContagensBackup(counts){
+  return Object.entries(counts).map(([nome,total])=>`${nome}: ${total}`).join(' · ');
+}
+function exportarBackupLocal(){
+  try{
+    const text=window.RandstadLocalBackup.exportBackup({profile:user,gates:localBackupGates(),data:localBackupSourceData()});
+    downloadLocalBackupFile(text,localBackupFilename());
+    document.getElementById('localBackupMessage').textContent='Backup JSON gerado para download. Guarde-o em local protegido; ele contém dados pessoais.';
+  }catch(error){
+    document.getElementById('localBackupMessage').textContent=error.message||'Não foi possível gerar o backup.';
+  }
+}
+async function prepararBackupLocal(input){
+  localBackupRestorePlan=null;
+  localBackupRollbackDownloaded=false;
+  document.getElementById('localBackupPreview').textContent='';
+  document.getElementById('localBackupRollbackButton').disabled=true;
+  document.getElementById('localBackupConfirmBlock').classList.add('hidden');
+  document.getElementById('localBackupMessage').textContent='';
+  const file=input.files&&input.files[0];
+  if(!file) return;
+  try{
+    const text=await file.text();
+    if(!input.files||input.files[0]!==file) return;
+    const plan=window.RandstadLocalBackup.prepareRestore({
+      profile:user,gates:localBackupGates(),backupText:text,currentData:db,storage:localBackupStorage()
+    });
+    localBackupRestorePlan=plan;
+    document.getElementById('localBackupPreview').textContent=
+      `Base atual: ${resumoContagensBackup(plan.currentCounts)}\nArquivo escolhido: ${resumoContagensBackup(plan.restoreCounts)}\nNenhuma alteração foi feita.`;
+    document.getElementById('localBackupRollbackButton').disabled=false;
+    document.getElementById('localBackupMessage').textContent='Confira as contagens. A próxima etapa apenas baixa uma cópia da base atual.';
+  }catch(error){
+    document.getElementById('localBackupMessage').textContent=error.message||'Não foi possível validar o arquivo.';
+  }
+}
+function baixarRollbackBackupLocal(){
+  if(!localBackupRestorePlan) return;
+  try{
+    downloadLocalBackupFile(localBackupRestorePlan.rollbackText,localBackupFilename('randstad-backup-recuperacao'));
+    localBackupRollbackDownloaded=true;
+    document.getElementById('localBackupConfirmBlock').classList.remove('hidden');
+    document.getElementById('localBackupMessage').textContent='Confira se a cópia de recuperação apareceu nos downloads e está guardada em local protegido.';
+    document.getElementById('localBackupRollbackCheck').checked=false;
+    document.getElementById('localBackupConfirmText').value='';
+    atualizarConfirmacaoBackupLocal();
+  }catch(error){
+    document.getElementById('localBackupMessage').textContent=error.message||'Não foi possível gerar a cópia de recuperação.';
+  }
+}
+function atualizarConfirmacaoBackupLocal(){
+  const check=document.getElementById('localBackupRollbackCheck');
+  const text=document.getElementById('localBackupConfirmText');
+  const button=document.getElementById('localBackupRestoreButton');
+  if(button&&check&&text){
+    button.disabled=!(localBackupRestorePlan&&localBackupRollbackDownloaded&&check.checked&&
+      text.value===window.RandstadLocalBackup.RESTORE_CONFIRMATION);
+  }
+}
+function restaurarBackupLocal(){
+  try{
+    const result=window.RandstadLocalBackup.commitRestore({
+      plan:localBackupRestorePlan,profile:user,gates:localBackupGates(),
+      storage:localBackupStorage(),confirmation:document.getElementById('localBackupConfirmText').value,
+      rollbackConfirmed:localBackupRollbackDownloaded&&document.getElementById('localBackupRollbackCheck').checked
+    });
+    localBackupRestorePlan=null;
+    document.getElementById('localBackupMessage').textContent=`Restauração concluída (${resumoContagensBackup(result.counts)}). Atualizando a tela.`;
+    recarregarAppAposBackup();
+  }catch(error){
+    document.getElementById('localBackupMessage').textContent=error.message||'A restauração foi cancelada sem confirmação.';
+  }
+}
+/* LOCAL_BACKUP_HANDLERS_END */
+async function fazerLogin(){
+  const email = document.getElementById('loginUser').value.trim();
+  const senha = document.getElementById('loginPass').value;
+  const btnErro = document.getElementById('loginErro');
+  btnErro.style.display = 'none';
+  try{
+    const perfil = await window.RandstadAuth.signIn(email, senha);
+    await aplicarPerfilFirebase(perfil);
+  }catch(error){
+    exibirErroLogin(window.RandstadAuth.messageFor(error));
+  }
+}
+async function logout(){
+  clearImportPreviewState();
+  if(window.RandstadPiiState) window.RandstadPiiState.clear();
+  remoteProducts = [];
+  remotePointVolumes = Object.create(null);
+  authProfileScopeKey = null;
+  try{ await window.RandstadAuth.signOut(); }
+  catch(error){ console.error('Falha ao encerrar sessão Firebase', error); }
+  location.reload();
+}
 
+function bootPublicIntakeReviewOnly(profile){
+  user={...profile,nome:profile.nome||profile.email};
+  document.getElementById('login').classList.add('hidden');
+  document.getElementById('localBackupApp').classList.add('hidden');
+  document.getElementById('colabApp').classList.add('hidden');
+  document.getElementById('topo').classList.remove('hidden');
+  document.getElementById('menu').classList.add('hidden');
+  document.getElementById('menu').innerHTML='';
+  document.getElementById('conteudo').classList.remove('hidden');
+  document.getElementById('credits').classList.add('hidden');
+  document.getElementById('nomeUsuario').textContent=user.nome;
+  document.getElementById('avatar').textContent=iniciais(user.nome);
+  document.getElementById('topoTitulo').childNodes[0].nodeValue='Randstad · Gestor ';
+  document.getElementById('topoSubtitulo').textContent='Revisão de cadastros públicos';
+  aba='agendamentos';
+}
 function boot(){
   document.getElementById('login').classList.add('hidden');
   document.getElementById('colabApp').classList.add('hidden');
@@ -1528,6 +2036,7 @@ function boot(){
     loja:      { titulo:`Randstad · ${user.nome}`, sub:user.subtitulo || 'Base de Operações' },
     cliente:   { titulo:`Randstad · ${user.nome}`, sub:user.subtitulo || 'Painel do Cliente' },
     motorista: { titulo:'Randstad · Motorista',    sub:'Rota de Coleta' },
+    estoque:   { titulo:'Randstad · Estoque',      sub:'Acesso operacional' },
   };
   const info = titulos[user.perfil] || { titulo:'Randstad', sub:'Nave' };
   document.getElementById('topoTitulo').childNodes[0].nodeValue = info.titulo + ' ';
@@ -1543,11 +2052,11 @@ function primeiraAba(){
     case 'loja': return 'buscar';
     case 'cliente': return 'cliente';
     case 'motorista': return 'coleta';
+    case 'estoque': return window.RandstadAccessPolicy.modulesFor(user)[0] || null;
   }
 }
-function montarMenu(){
-  const p=user.perfil;
-  const abas = {
+function abasPermitidas(userAtual){
+  const menus = {
     gestor:[
       ['dashboard','Dashboard'],
       ['colaboradores','Colaboradores'],
@@ -1559,12 +2068,42 @@ function montarMenu(){
     ],
     loja:[['buscar','Registrar'],['devolvidos','Produtos devolvidos'],['aguardando','Aguardando']],
     cliente:[['cliente','Meus Colaboradores'],['dashboardcli','Dashboard'],['historicocli','Histórico']],
-    motorista:[['coleta','Coletas'],['historico','Histórico']],
-  }[p];
+    motorista:[['coleta','Coletas'],['historico','Histórico']]
+  };
+  const profileRole=String(userAtual.perfilBanco||userAtual.perfil||'').toLowerCase();
+  if(publicIntakeReviewOnlyMode(userAtual)) return [['agendamentos','Cadastros públicos']];
+  if(publicIntakeReviewActive() && profileRole==='gestor') menus.gestor.push(['agendamentos','Cadastros públicos']);
+  if(individualCollectionSyncActive()) menus.gestor.push(['historico-coletas','Histórico de coletas']);
+  if(userAtual.perfil==='estoque'){
+    const gestorTabs=[
+      ['dashboard','Dashboard'],
+      ['colaboradores','Colaboradores'],
+      ['produtos','Produtos'],
+      ['importar','Importar'],
+      ['historico-import','Importações'],
+      ['lavanderia','Lavanderia'],
+      ['relatorios','Relatórios']
+    ];
+    if(individualCollectionSyncActive()) gestorTabs.push(['historico-coletas','Histórico de coletas']);
+    const permitidos=new Set(window.RandstadAccessPolicy.modulesFor(userAtual));
+    return gestorTabs.filter(([id])=>permitidos.has(id));
+  }
+  return menus[userAtual.perfil] || [];
+}
+function montarMenu(){
+  const abas = abasPermitidas(user);
   document.getElementById('menu').innerHTML = abas.map(([id,lb])=>
     `<button class="tab-btn" data-aba="${id}" onclick="navegar('${id}')"><span class="dot"></span><span>${lb}</span></button>`).join('');
 }
+function abaPermitida(id){
+  if(!user) return false;
+  return abasPermitidas(user).some(([abaId])=>abaId===id);
+}
 function navegar(id){
+  if(!abaPermitida(id)){
+    toast('Seu perfil não tem acesso a este módulo.','erro');
+    return;
+  }
   aba=id;
   document.querySelectorAll('nav.tabs .tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.aba===id));
   ({
@@ -1573,24 +2112,186 @@ function navegar(id){
     lavanderia:renderLavanderia, relatorios:renderRel,
     buscar:renderBuscar, aguardando:renderAguard, devolvidos:renderDevolv,
     cliente:renderCliente, dashboardcli:renderDashboardCliente, historicocli:renderHistoricoCliente,
-    coleta:renderColeta, historico:renderHist,
+    coleta:renderColeta, historico:renderHist, 'historico-coletas':renderHist,
+    agendamentos:renderPublicIntakeReview,
   }[id]||renderDash)();
+}
+const PUBLIC_INTAKE_REVIEW_LABELS={
+  pendente:'Pendente',
+  possivel_duplicado:'Possível duplicado',
+  revisado:'Revisado',
+  descartado:'Descartado'
+};
+function formatPublicIntakeDate(value){
+  try{
+    const date=value && typeof value.toDate==='function' ? value.toDate() : new Date(value);
+    if(!(date instanceof Date) || !Number.isFinite(date.getTime())) return '—';
+    return new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'}).format(date);
+  }catch(error){ return '—'; }
+}
+async function renderPublicIntakeReview(){
+  const content=document.getElementById('conteudo');
+  if(!content) return;
+  const role=String(user && (user.perfilBanco||user.perfil)||'').toLowerCase();
+  if(!publicIntakeReviewActive() || role!=='gestor'){
+    content.innerHTML='<div class="page-head"><h1>Cadastros públicos</h1></div><div class="card"><div class="empty">A fila de revisão está desativada ou este perfil não tem acesso.</div></div>';
+    return;
+  }
+  const token=(window._publicIntakeReviewToken||0)+1;
+  window._publicIntakeReviewToken=token;
+  content.innerHTML='<div class="page-head"><h1>Cadastros públicos</h1><p>Carregando submissões para revisão manual…</p></div>';
+  try{
+    const rows=await createPublicIntakeReviewRepository().list(501);
+    if(token!==window._publicIntakeReviewToken) return;
+    const allRows=rows.slice(0,500);
+    const knownFilter=window._publicIntakeReviewFilter||'todos';
+    const filter=['todos',...Object.keys(PUBLIC_INTAKE_REVIEW_LABELS)].includes(knownFilter)?knownFilter:'todos';
+    window._publicIntakeReviewFilter=filter;
+    const visible=filter==='todos'?allRows:allRows.filter(row=>row.revisao===filter);
+    const rowsHtml=visible.map(row=>{
+      const id=esc(row.__docId);
+      const statusOptions=Object.entries(PUBLIC_INTAKE_REVIEW_LABELS).map(([value,label])=>`<option value="${value}" ${row.revisao===value?'selected':''}>${label}</option>`).join('');
+      const point=row.ponto==='Aurora'?'Vila Aurora':row.ponto;
+      return `<tr><td>${formatPublicIntakeDate(row.recebidoEm)}</td><td><b>${esc(row.nome)}</b><br><small>CPF: ${esc(row.cpf)}</small></td><td>${esc(row.telefone)}<br><small>${esc(row.email)}</small></td><td>${esc(point)}<br><small>${esc(row.cliente)}</small></td><td>${esc(PUBLIC_INTAKE_REVIEW_LABELS[row.revisao])}</td><td><select class="input" id="intake-review-status-${id}">${statusOptions}</select><button class="btn sm" style="margin-top:6px" onclick="salvarRevisaoPublica('${id}')">Salvar revisão</button><button class="btn sm secondary" style="margin-top:6px" onclick="excluirCadastroPublico('${id}')">Excluir só este cadastro</button></td></tr>`;
+    }).join('');
+    content.innerHTML=`<div class="page-head"><h1>${rocketIcon('md')} Cadastros públicos</h1><p>Submissões recebidas aguardando conferência do gestor.</p></div><div class="card"><div class="row" style="align-items:end"><div class="col-fix"><label>Filtrar status</label><select class="input" onchange="window._publicIntakeReviewFilter=this.value;renderPublicIntakeReview()"><option value="todos" ${filter==='todos'?'selected':''}>Todos</option>${Object.entries(PUBLIC_INTAKE_REVIEW_LABELS).map(([value,label])=>`<option value="${value}" ${filter===value?'selected':''}>${label}</option>`).join('')}</select></div><div class="empty">A revisão não mescla cadastros nem detecta duplicados automaticamente. A exclusão afeta somente o registro selecionado.</div></div><div class="empty" style="margin:12px 0">Dados pessoais visíveis somente ao perfil Gestor. A submissão não confirma o recebimento físico no ponto.</div>${rows.length>500?'<div class="empty warn">Mostrando os 500 cadastros mais recentes; cadastros antigos podem não aparecer nesta tela.</div>':''}${visible.length?`<div style="overflow-x:auto"><table><thead><tr><th>Recebido</th><th>Nome e CPF</th><th>Contato</th><th>Ponto e cliente</th><th>Status</th><th>Ação individual</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`:'<div class="empty">Nenhum cadastro neste filtro.</div>'}</div>`;
+  }catch(error){
+    console.error('Falha ao carregar revisão de cadastros públicos',error);
+    if(token!==window._publicIntakeReviewToken) return;
+    content.innerHTML='<div class="page-head"><h1>Cadastros públicos</h1></div><div class="card"><div class="empty">Não foi possível carregar a fila de revisão. Nenhum cadastro foi alterado.</div></div>';
+  }
+}
+async function salvarRevisaoPublica(id){
+  if(!publicIntakeReviewActive() || String(user && (user.perfilBanco||user.perfil)||'').toLowerCase()!=='gestor') return;
+  const select=document.getElementById(`intake-review-status-${id}`);
+  if(!select) return;
+  try{
+    await createPublicIntakeReviewRepository().updateReview(id,select.value);
+    toast('Revisão atualizada com sucesso.');
+    await renderPublicIntakeReview();
+  }catch(error){
+    console.error('Falha ao atualizar revisão de cadastro público',error);
+    toast('Não foi possível atualizar a revisão. Nenhum dado enviado foi alterado.','erro');
+  }
+}
+async function excluirCadastroPublico(id){
+  if(!publicIntakeReviewActive() || String(user && (user.perfilBanco||user.perfil)||'').toLowerCase()!=='gestor') return;
+  if(!confirm('Excluir somente este cadastro público?\n\nA exclusão não pode ser desfeita e não altera colaboradores, devoluções ou históricos.')) return;
+  try{
+    await createPublicIntakeReviewRepository().deleteOne(id);
+    toast('O cadastro selecionado foi excluído.');
+    await renderPublicIntakeReview();
+  }catch(error){
+    console.error('Falha ao excluir cadastro público',error);
+    toast('Não foi possível excluir o cadastro selecionado.','erro');
+  }
 }
 function toggleAcc(id){ document.getElementById(id).classList.toggle('open'); }
 function toggleSub(id){ document.getElementById(id).classList.toggle('open'); }
 
 function colaboradoresDoCliente(cliente){
+  if(anyFirestoreBusinessGateOpen()){
+    if(!businessDataSyncActive()) return [];
+    const collaborators=currentCollaborators();
+    const returns=currentReturns().filter(item=>item.cliente===cliente);
+    const linked=returnsByOpaqueCollaboratorId(collaborators,returns);
+    return collaborators.filter(item=>item.cliente===cliente || linked.has(item.__docId));
+  }
   const cpfs = new Set();
-  db.colaboradores.forEach(c=>{ if(c.cliente === cliente) cpfs.add(soNum(c.cpf)); });
-  db.devolucoes.forEach(d=>{ if(d.cliente === cliente) cpfs.add(soNum(d.cpf)); });
+  const colaboradores = currentCollaborators();
+  const devolucoes = currentReturns();
+  colaboradores.forEach(c=>{ if(c.cliente === cliente) cpfs.add(soNum(c.cpf)); });
+  devolucoes.forEach(d=>{ if(d.cliente === cliente) cpfs.add(soNum(d.cpf)); });
   const hist = garantirHistorico(cliente);
   hist.concluidas.forEach(x=>cpfs.add(soNum(x.cpf)));
   hist.pendentes.forEach(x=>cpfs.add(soNum(x.cpf)));
   (db.cobrancas||[]).forEach(x=>{ if(x.cliente===cliente) cpfs.add(soNum(x.cpf)); });
-  return db.colaboradores.filter(c=>cpfs.has(soNum(c.cpf)));
+  return colaboradores.filter(c=>cpfs.has(soNum(c.cpf)));
 }
 
+function returnsByOpaqueCollaboratorId(collaborators, returns){
+  const state=window.RandstadPiiState;
+  const allowed=new Map();
+  (collaborators||[]).forEach(item=>{
+    try{ allowed.set(state.assertOpaqueId(item.__docId,'colab'),item); }catch(error){}
+  });
+  const byId=new Map();
+  (returns||[]).forEach(item=>{
+    try{
+      state.assertOpaqueId(item.__docId,'return');
+      const collaboratorId=state.assertOpaqueId(item.colaboradorId,'colab');
+      const collaborator=allowed.get(collaboratorId);
+      if(!collaborator || normalizePointUi(collaborator.ponto)!==normalizePointUi(item.ponto)) return;
+      if(collaborator.cliente && collaborator.cliente!==item.cliente) return;
+      if(!byId.has(collaboratorId)) byId.set(collaboratorId,item);
+    }catch(error){}
+  });
+  return byId;
+}
+async function loadManagerCollectionQueueSummary(){
+  const targetId='managerCollectionQueue';
+  const token=(window._managerQueueRequestToken||0)+1;
+  window._managerQueueRequestToken=token;
+  const target=document.getElementById(targetId);
+  if(!target) return;
+  if(!individualCollectionSyncActive()){
+    target.innerHTML='<div class="empty">Resumo da fila indisponível enquanto a sincronização individual estiver desligada.</div>';
+    return;
+  }
+  target.innerHTML='<div class="empty">Carregando resumo sanitizado da fila…</div>';
+  try{
+    const {rows,totals}=await createIndividualCollectionRepository().listPending('');
+    if(token!==window._managerQueueRequestToken) return;
+    const current=document.getElementById(targetId);
+    if(!current) return;
+    if(!Number.isSafeInteger(totals.linhasPendentes) || totals.linhasPendentes<0) throw new Error('Resumo da fila fora do limite seguro.');
+    const byPoint=new Map(PONTOS.map(point=>[point,{count:0,lines:0}]));
+    const byClient=new Map(['Shopee','Mercado Livre'].map(client=>[client,{count:0,lines:0}]));
+    let groupedLineCount=0;
+    rows.forEach(row=>{
+      const point=normalizePointUi(row.ponto), pointTotal=byPoint.get(point), clientTotal=byClient.get(row.cliente);
+      if(!pointTotal || !clientTotal || !Number.isSafeInteger(row.quantidadeLinhas) || row.quantidadeLinhas<1) return;
+      pointTotal.count++; pointTotal.lines+=row.quantidadeLinhas;
+      clientTotal.count++; clientTotal.lines+=row.quantidadeLinhas;
+      groupedLineCount+=row.quantidadeLinhas;
+    });
+    if(!Number.isSafeInteger(groupedLineCount)) throw new Error('Soma das linhas fora do limite seguro.');
+    const consistent=rows.length===totals.devolucoesPendentes && groupedLineCount===totals.linhasPendentes;
+    current.innerHTML=`<div class="grid grid-3"><div class="stat warn"><div class="l">Devoluções aguardando coleta</div><div class="v">${totals.devolucoesPendentes}</div></div><div class="stat"><div class="l">Linhas aguardando coleta</div><div class="v">${totals.linhasPendentes}</div></div><div class="stat"><div class="l">Conferência</div><div class="v">${consistent?'Consistente':'Revisar totais'}</div></div></div><div class="grid grid-2"><div><h3>Por ponto</h3><table><thead><tr><th>Ponto</th><th>Devoluções</th><th>Linhas</th></tr></thead><tbody>${PONTOS.map(point=>{const value=byPoint.get(point);return `<tr><td>${esc(point)}</td><td>${value.count}</td><td>${value.lines}</td></tr>`;}).join('')}</tbody></table></div><div><h3>Por cliente</h3><table><thead><tr><th>Cliente</th><th>Devoluções</th><th>Linhas</th></tr></thead><tbody>${['Shopee','Mercado Livre'].map(client=>{const value=byClient.get(client);return `<tr><td>${esc(client)}</td><td>${value.count}</td><td>${value.lines}</td></tr>`;}).join('')}</tbody></table></div></div><div class="empty">Resumo sem nomes, CPFs, protocolos, produtos ou volumes físicos.</div>`;
+  }catch(error){
+    console.warn('Falha ao carregar resumo sanitizado da fila',error);
+    if(token!==window._managerQueueRequestToken) return;
+    const current=document.getElementById(targetId);
+    if(current) current.innerHTML='<div class="empty">Não foi possível carregar o resumo seguro da fila.</div><button class="btn ghost" onclick="renderDash()">Tentar novamente</button>';
+  }
+}
 /* DASHBOARD */
+function renderDashRemote(){
+  const collaborators=currentCollaborators();
+  const returns=currentReturns();
+  const byCollaborator=returnsByOpaqueCollaboratorId(collaborators,returns);
+  const isPending=item=>item.status==='aguardando' && !byCollaborator.has(item.__docId);
+  const pending=collaborators.filter(isPending);
+  const byPoint=PONTOS.map(point=>{
+    const rows=collaborators.filter(item=>normalizePointUi(item.ponto)===normalizePointUi(point));
+    return {point,total:rows.length,pending:rows.filter(isPending).length,returned:rows.filter(item=>byCollaborator.has(item.__docId)).length};
+  });
+  const clientRows=['Shopee','Mercado Livre'].map(client=>{
+    const rows=collaborators.filter(item=>item.cliente===client || byCollaborator.get(item.__docId)?.cliente===client);
+    return {client,total:rows.length,pending:rows.filter(isPending).length,returned:rows.filter(item=>byCollaborator.has(item.__docId)).length};
+  });
+  const pointVolumesPanel=pointsSyncActive()
+    ? `<div class="card"><h2>Volumes físicos por ponto</h2><div style="overflow-x:auto"><table><thead><tr><th>Ponto</th><th>Total informado</th><th>Atualizar total</th></tr></thead><tbody>${PONTOS.map((point,index)=>{const volume=getVolumesPonto(point);return `<tr><td>${esc(point)}</td><td>${Number.isSafeInteger(volume)?volume:'Não inicializado'}</td><td><div class="row"><input class="input" style="max-width:150px" type="number" min="0" step="1" id="manager-volume-${index}" value="${Number.isSafeInteger(volume)?volume:''}"/><button class="btn sm" onclick="salvarVolumesPonto('${point}','manager-volume-${index}')">Salvar</button></div></td></tr>`;}).join('')}</tbody></table></div></div>`
+    : `<div class="card"><h2>Volumes físicos</h2><div class="empty">A leitura e edição remota dos totais ainda estão bloqueadas.</div></div>`;
+  document.getElementById('conteudo').innerHTML=`
+    <div class="page-head"><h1>${rocketIcon('md')} Dashboard</h1><p>Painel remoto somente leitura.</p></div>
+    <div class="grid grid-3" style="margin-bottom:18px"><div class="stat"><div class="l">Colaboradores</div><div class="v">${collaborators.length}</div></div><div class="stat warn"><div class="l">Aguardando devolução</div><div class="v">${pending.length}</div></div><div class="stat ok"><div class="l">Devoluções registradas</div><div class="v">${byCollaborator.size}</div></div></div>
+    <div class="card"><h2>Por ponto</h2><div style="overflow-x:auto"><table><thead><tr><th>Ponto</th><th>Total</th><th>Aguardando devolução</th><th>Com devolução</th></tr></thead><tbody>${byPoint.map(row=>`<tr><td>${esc(row.point)}</td><td>${row.total}</td><td>${row.pending}</td><td>${row.returned}</td></tr>`).join('')}</tbody></table></div></div>
+    ${pointVolumesPanel}
+    <div class="card"><h2>Por cliente</h2><div style="overflow-x:auto"><table><thead><tr><th>Cliente</th><th>Total</th><th>Aguardando devolução</th><th>Com devolução</th></tr></thead><tbody>${clientRows.map(row=>`<tr><td>${esc(row.client)}</td><td>${row.total}</td><td>${row.pending}</td><td>${row.returned}</td></tr>`).join('')}</tbody></table></div></div>
+    <div class="card"><h2>Fila de coletas · resumo sanitizado</h2><div id="managerCollectionQueue" class="empty">Carregando estado do gate…</div><div class="empty">Volumes físicos permanecem independentes da fila de devoluções.</div></div>`;
+  loadManagerCollectionQueueSummary();
+}
 function garantirPeriodoDash(){
   const anoAtual = String(new Date().getFullYear());
   const mesAtual = String(new Date().getMonth()+1).padStart(2,'0');
@@ -1598,12 +2299,16 @@ function garantirPeriodoDash(){
   if(!window._dashGestorMes) window._dashGestorMes = mesAtual;
 }
 function renderDash(){
+  if(businessDataSyncActive()) return renderDashRemote();
+  if(blockUnmigratedPiiView()) return;
   garantirPeriodoDash();
   const ano = window._dashGestorAno;
   const mes = window._dashGestorMes;
   const geral = (ano==='geral');
-  const colabsFiltrados = db.colaboradores.filter(c=> geral || colabMatchesPeriod(c, ano, mes));
-  const devsFiltradas = db.devolucoes.filter(d=> geral || devMatchesPeriod(d, ano, mes));
+  const colaboradores = currentCollaborators();
+  const devolucoes = currentReturns();
+  const colabsFiltrados = colaboradores.filter(c=> geral || colabMatchesPeriod(c, ano, mes));
+  const devsFiltradas = devolucoes.filter(d=> geral || devMatchesPeriod(d, ano, mes));
   const total = colabsFiltrados.length;
   const dev = colabsFiltrados.filter(c=>c.status!=='aguardando').length;
   const agu = total-dev;
@@ -1612,7 +2317,7 @@ function renderDash(){
 
   const clientesInfo = ['Shopee','Mercado Livre'].map(cli=>{
     const colabCli = colaboradoresDoCliente(cli);
-    const devsCliPeriodo = db.devolucoes.filter(d=>d.cliente===cli && (geral || devMatchesPeriod(d, ano, mes)));
+    const devsCliPeriodo = devolucoes.filter(d=>d.cliente===cli && (geral || devMatchesPeriod(d, ano, mes)));
     const cpfsDevPeriodo = new Set(devsCliPeriodo.map(d=>soNum(d.cpf)));
     const concluidas = colabCli.filter(c=>cpfsDevPeriodo.has(soNum(c.cpf))).length;
     const pendentes = colabCli.length - concluidas;
@@ -1767,20 +2472,23 @@ function renderDash(){
 
 /* COLABORADORES */
 function renderColab(){
+  if(anyFirestoreBusinessGateOpen() && !businessDataSyncActive()) return blockUnmigratedPiiView();
   const anoAtual = String(new Date().getFullYear());
   const mesAtual = String(new Date().getMonth()+1).padStart(2,'0');
   if(!window._colabAno) window._colabAno = anoAtual;
   if(!window._colabMes) window._colabMes = mesAtual;
   const geral = (window._colabAno==='geral');
   const b=(window._bc||'').toLowerCase();
-  const lista = db.colaboradores.filter(c=>{
+  const colaboradores = currentCollaborators();
+  const lista = colaboradores.filter(c=>{
     if(!geral && !colabMatchesPeriod(c, window._colabAno, window._colabMes)) return false;
     if(!b) return true;
     return c.nome.toLowerCase().includes(b) || soNum(c.cpf).includes(soNum(b));
   });
-  const isGestor = user.perfil==='gestor';
+  const canManage = window.RandstadAccessPolicy.canManageBusiness(user);
+  const remotePii = businessDataSyncActive();
   document.getElementById('conteudo').innerHTML=`
-    <div class="page-head"><h1>${rocketIcon('md')} Colaboradores</h1><p>${db.colaboradores.length} cadastrados · ${lista.length} no filtro</p></div>
+    <div class="page-head"><h1>${rocketIcon('md')} Colaboradores</h1><p>${colaboradores.length} cadastrados · ${lista.length} no filtro</p></div>
     <div class="card">
       <div class="row">
         <div class="col-fix" style="width:160px">
@@ -1806,46 +2514,62 @@ function renderColab(){
         <div style="overflow-x:auto"><table>
           <thead><tr>
             <th>Nome</th><th>CPF</th><th>Telefone</th><th>Ponto</th><th>Cliente</th><th>Inserido em</th><th>Origem</th><th>Status</th>
-            ${isGestor?'<th style="text-align:right">Ações</th>':''}
+            ${canManage?'<th style="text-align:right">Ações</th>':''}
           </tr></thead>
           <tbody>${lista.map(c=>`<tr>
             <td>${esc(c.nome)}</td><td><code>${esc(c.cpf)}</code></td><td>${esc(c.telefone||'-')}</td>
-            <td>${c.ponto}</td>
+            <td>${esc(c.ponto)}</td>
             <td>${c.cliente==='Shopee'?'<span class="client-badge sh">Shopee</span>':c.cliente==='Mercado Livre'?'<span class="client-badge ml">Mercado Livre</span>':'<span class="pill cinza">—</span>'}</td>
-            <td style="color:var(--muted);font-size:13px">${c.dataInsercao||'-'}</td>
+            <td style="color:var(--muted);font-size:13px">${esc(c.dataInsercao||'-')}</td>
             <td>${c.origem==='autocadastro'?'<span class="pill devolvido">Auto</span>':'<span class="pill cinza">Import</span>'}</td>
-            <td><span class="pill ${c.status}">${c.status}</span></td>
-            ${isGestor?`<td style="text-align:right;white-space:nowrap">
-              <button class="btn ghost xs" onclick="abrirModalEditar('${esc(c.cpf)}')">Editar</button>
-              <button class="btn danger xs" style="margin-left:6px" onclick="excluirColab('${esc(c.cpf)}')">Excluir</button>
+            <td><span class="pill ${esc(c.status)}">${esc(c.status)}</span></td>
+            ${canManage?`<td style="text-align:right;white-space:nowrap">
+              <button class="btn ghost xs" onclick="abrirModalEditar('${esc(c.__docId||c.cpf)}')" ${remotePii && c.status!=='aguardando'?'disabled title="Cadastro com devolução registrada; edição indisponível nesta tela."':''}>Editar</button>
+              <button class="btn danger xs" style="margin-left:6px" onclick="excluirColab('${esc(c.__docId||c.cpf)}')" ${remotePii?'disabled title="Exclusão remota ainda não foi liberada."':''}>Excluir</button>
             </td>`:''}
           </tr>`).join('')}</tbody>
         </table></div>
       ` : `<div class="empty">Nenhum colaborador cadastrado. Importe uma planilha ou aguarde autocadastros.</div>`}
     </div>`;
 }
-function limparColab(){ if(confirm('Apagar TODOS os colaboradores? Essa ação não pode ser desfeita.')){db.colaboradores=[];save();renderColab();} }
+function limparColab(){
+  if(rejectLegacyWrite()) return;
+  if(confirm('Apagar TODOS os colaboradores? Essa ação não pode ser desfeita.')){
+    db.colaboradores=[];
+    save();
+    renderColab();
+  }
+}
 
 let _editCpfOriginal = null;
-function abrirModalEditar(cpf){
-  const c = db.colaboradores.find(x=>soNum(x.cpf)===soNum(cpf));
+let _editColabId = null;
+function abrirModalEditar(identifier){
+  const c = findCollaboratorForUi(identifier);
   if(!c) return;
   _editCpfOriginal = c.cpf;
+  _editColabId = c.__docId || null;
   document.getElementById('editNome').value = c.nome || '';
   document.getElementById('editCpf').value = c.cpf || '';
+  document.getElementById('editCpf').disabled = businessDataSyncActive();
   document.getElementById('editTelefone').value = c.telefone || '';
   document.getElementById('editEmail').value = c.email || '';
   document.getElementById('editCliente').value = c.cliente || '';
   document.getElementById('editPonto').value = c.ponto || 'Aurora';
   document.getElementById('editStatus').value = c.status || 'aguardando';
+  document.getElementById('editStatus').disabled = businessDataSyncActive();
   document.getElementById('modalErro').style.display = 'none';
   document.getElementById('modalEditar').classList.add('show');
 }
 function fecharModalEditar(){
   document.getElementById('modalEditar').classList.remove('show');
   _editCpfOriginal = null;
+  _editColabId = null;
+  document.getElementById('editStatus').disabled = false;
+  document.getElementById('editCpf').disabled = false;
 }
-function salvarEdicao(){
+async function salvarEdicao(){
+  const remotePii = businessDataSyncActive();
+  if(!remotePii && rejectLegacyWrite()) return;
   const erro = document.getElementById('modalErro');
   erro.style.display = 'none';
   const nome = document.getElementById('editNome').value.trim();
@@ -1859,6 +2583,43 @@ function salvarEdicao(){
   if(!nome || nome.split(/\s+/).length < 2){ erro.style.display='block'; erro.textContent='Informe nome completo.'; return; }
   if(!validaCPF(cpf)){ erro.style.display='block'; erro.textContent='CPF inválido.'; return; }
   if(!tel || soNum(tel).length < 10){ erro.style.display='block'; erro.textContent='Telefone inválido.'; return; }
+
+  if(remotePii){
+    if(!productsSyncActive() || !_editColabId){ erro.style.display='block'; erro.textContent='O cadastro remoto não está disponível para edição.'; return; }
+    if(!PONTOS.includes(ponto) || (cliente && !['Shopee','Mercado Livre'].includes(cliente))){
+      erro.style.display='block'; erro.textContent='Confira o ponto e o cliente selecionados.'; return;
+    }
+    let current;
+    try{
+      current=window.RandstadPiiState.getCollaborator(user,_editColabId);
+      if(!current || current.status!=='aguardando' || soNum(current.cpf)!==soNum(cpf)){
+        erro.style.display='block'; erro.textContent='O cadastro mudou ou não está mais aguardando devolução. Atualize a lista.'; return;
+      }
+      if(currentReturns().some(item=>item.colaboradorId===_editColabId)){
+        erro.style.display='block'; erro.textContent='Há um histórico vinculado; esta tela não altera esse cadastro.'; return;
+      }
+      window.RandstadPiiState.assertOpaqueId(_editColabId,'colab');
+    }catch(error){
+      erro.style.display='block'; erro.textContent='Não foi possível validar o cadastro remoto. Atualize a lista.'; return;
+    }
+    if(window._savingCollaboratorUpdate) return;
+    window._savingCollaboratorUpdate=true;
+    const patch={nome,telefone:tel,email,cliente,ponto};
+    try{
+      await createPiiRepository().updateCollaborator(_editColabId,patch);
+      window.RandstadPiiState.recordCommittedCollaboratorUpdate(user,_editColabId,patch);
+      toast(`Cadastro de ${nome} atualizado no servidor.`);
+      fecharModalEditar();
+      renderColab();
+    }catch(error){
+      console.error('Falha ao atualizar cadastro remoto',error);
+      erro.style.display='block';
+      erro.textContent='Não foi possível confirmar a atualização. Atualize a lista antes de tentar novamente.';
+    }finally{
+      window._savingCollaboratorUpdate=false;
+    }
+    return;
+  }
 
   const c = db.colaboradores.find(x=>soNum(x.cpf)===soNum(_editCpfOriginal));
   if(!c){ erro.style.display='block'; erro.textContent='Colaborador não encontrado.'; return; }
@@ -1875,6 +2636,7 @@ function salvarEdicao(){
   renderColab();
 }
 function excluirColab(cpf){
+  if(rejectLegacyWrite()) return;
   const c = db.colaboradores.find(x=>soNum(x.cpf)===soNum(cpf));
   if(!c) return;
   if(!confirm(`Excluir o cadastro de "${c.nome}"?\n\nEssa ação não pode ser desfeita.\nA pessoa poderá se cadastrar novamente pelo formulário público.`)) return;
@@ -1888,19 +2650,26 @@ function excluirColab(cpf){
    PRODUTOS — com Adicionar / Editar / Excluir
    ========================================================= */
 function renderProd(){
-  const b = window._bp || '';
+  if(anyFirestoreBusinessGateOpen() && !productsSyncActive()){
+    document.getElementById('conteudo').innerHTML='<div class="page-head"><h1>Produtos</h1></div><div class="card"><div class="empty">O catálogo remoto ainda não está sincronizado.</div></div>';
+    return;
+  }
+  const products = currentProducts();
+  const b = window._bp || ''; 
   const clienteFiltro = window._bpCliente || '';
   const q = normalizaTexto(b).trim();
 
-  let lista = db.produtos.filter(p=>{
+  let lista = products.filter(p=>{
     if(clienteFiltro && p.cliente !== clienteFiltro) return false;
     if(!q) return true;
     return normalizaTexto(p.codigo).includes(q) || normalizaTexto(p.descricao).includes(q);
   });
   lista = lista.sort((a,b)=> a.codigo.localeCompare(b.codigo));
 
-  const totalGeral = db.produtos.length;
+  const totalGeral = products.length;
   const totalFiltro = lista.length;
+  const remoteReadOnly = productsSyncActive();
+  const mutationDisabled = remoteReadOnly ? 'disabled title="Alterações remotas do catálogo ainda não foram implementadas."' : '';
 
   document.getElementById('conteudo').innerHTML=`
     <div class="page-head">
@@ -1912,6 +2681,7 @@ function renderProd(){
     </div>
 
     <div class="card">
+      ${remoteReadOnly ? '<div class="empty" style="margin-bottom:12px">Catálogo remoto em modo somente leitura; inclusão, edição e exclusão ainda estão bloqueadas.</div>' : ''}
       <div class="toolbar-prod">
         <div class="search-wrap">
           <span class="icon">🔍</span>
@@ -1923,7 +2693,7 @@ function renderProd(){
           <option value="Shopee" ${clienteFiltro==='Shopee'?'selected':''}>Shopee</option>
           <option value="Mercado Livre" ${clienteFiltro==='Mercado Livre'?'selected':''}>Mercado Livre</option>
         </select>
-        <button class="btn primary" onclick="abrirModalProduto('novo')">
+        <button class="btn primary" onclick="abrirModalProduto('novo')" ${mutationDisabled}>
           + Adicionar produto
         </button>
       </div>
@@ -1935,14 +2705,14 @@ function renderProd(){
             <th style="text-align:right">Ações</th>
           </tr></thead>
           <tbody>${lista.map(p=>{
-            const idx = db.produtos.indexOf(p);
+            const idx = products.indexOf(p);
             return `<tr>
               <td><code>${esc(p.codigo)}</code></td>
               <td>${esc(p.descricao)}</td>
               <td>${p.cliente==='Shopee'?'<span class="client-badge sh">Shopee</span>':p.cliente==='Mercado Livre'?'<span class="client-badge ml">Mercado Livre</span>':'<span class="pill cinza">'+esc(p.cliente||'N/D')+'</span>'}</td>
               <td style="text-align:right;white-space:nowrap">
-                <button class="btn ghost xs" onclick="abrirModalProduto('editar', ${idx})">Editar</button>
-                <button class="btn danger xs" style="margin-left:6px" onclick="excluirProduto(${idx})">Excluir</button>
+                <button class="btn ghost xs" onclick="abrirModalProduto('editar', ${idx})" ${mutationDisabled}>Editar</button>
+                <button class="btn danger xs" style="margin-left:6px" onclick="excluirProduto(${idx})" ${mutationDisabled}>Excluir</button>
               </td>
             </tr>`;
           }).join('')}</tbody>
@@ -1950,7 +2720,7 @@ function renderProd(){
       ` : `
         <div class="empty">
           ${totalGeral === 0
-            ? 'Nenhum produto cadastrado. Clique em "+ Adicionar produto" ou importe uma planilha.'
+            ? (remoteReadOnly ? 'Nenhum produto foi retornado pelo catálogo remoto.' : 'Nenhum produto cadastrado. Clique em "+ Adicionar produto" ou importe uma planilha.')
             : 'Nenhum produto encontrado com esse filtro.'}
         </div>`}
     </div>`;
@@ -1965,7 +2735,7 @@ function abrirModalProduto(modo, idx){
   erro.style.display = 'none';
 
   if(_prodEditIdx !== null){
-    const p = db.produtos[_prodEditIdx];
+    const p = currentProducts()[_prodEditIdx];
     if(!p) return;
     titulo.textContent = 'Editar produto';
     document.getElementById('prodCodigo').value = p.codigo || '';
@@ -1986,9 +2756,11 @@ function fecharModalProduto(){
   document.getElementById('modalProduto').classList.remove('show');
   _prodEditIdx = null;
 }
-function salvarProduto(){
+async function salvarProduto(){
+  if(rejectLegacyWrite()) return;
   const erro = document.getElementById('modalProdErro');
   erro.style.display = 'none';
+  if(window._savingProduct) return;
 
   const codigo = document.getElementById('prodCodigo').value.trim();
   const descricao = document.getElementById('prodDescricao').value.trim();
@@ -1998,51 +2770,75 @@ function salvarProduto(){
   if(!descricao){ erro.style.display='block'; erro.textContent='Informe a descrição do produto.'; return; }
   if(!cliente){ erro.style.display='block'; erro.textContent='Selecione o cliente.'; return; }
 
-  // Verifica duplicidade (mesmo código + mesmo cliente em OUTRO produto)
   const duplicado = db.produtos.findIndex((p, i)=>{
     if(_prodEditIdx !== null && i === _prodEditIdx) return false;
     return p.codigo === codigo && p.cliente === cliente;
   });
+  if(duplicado >= 0 && !confirm(`Já existe um produto com código "${codigo}" para o cliente "${cliente}".\n\nDeseja ATUALIZAR a descrição existente?`)) return;
 
-  if(duplicado >= 0){
-    const resp = confirm(`Já existe um produto com código "${codigo}" para o cliente "${cliente}".\n\nDeseja ATUALIZAR a descrição existente?`);
-    if(!resp) return;
-    db.produtos[duplicado].descricao = descricao;
-    save();
-    toast(`Produto ${codigo} atualizado.`);
+  window._savingProduct = true;
+  const button = document.getElementById('btnSalvarProduto');
+  if(button) button.disabled = true;
+  try{
+    const repository = productsSyncActive() ? createProductsRepository() : null;
+    if(duplicado >= 0){
+      const updated = {...db.produtos[duplicado], descricao};
+      if(repository) await repository.updateDescription(updated);
+      db.produtos[duplicado].descricao = descricao;
+      save();
+      toast(`Produto ${codigo} atualizado.`);
+    }else if(_prodEditIdx !== null){
+      const original = db.produtos[_prodEditIdx];
+      if(!original){ erro.style.display='block'; erro.textContent='Produto não encontrado.'; return; }
+      const updated = {codigo, descricao, cliente};
+      if(repository){
+        await repository.rename(original, updated);
+        updated.productKey = repository.documentId(updated);
+      }
+      Object.assign(original, updated);
+      save();
+      toast(`Produto ${codigo} atualizado.`);
+    }else{
+      const novo = {codigo, descricao, cliente};
+      if(repository){
+        await repository.create(novo);
+        novo.productKey = repository.documentId(novo);
+      }
+      db.produtos.push(novo);
+      save();
+      toast(`Produto ${codigo} adicionado.`);
+    }
     fecharModalProduto();
     renderProd();
-    return;
+  }catch(error){
+    erro.style.display='block';
+    erro.textContent=productSyncError(error);
+  }finally{
+    window._savingProduct = false;
+    if(button) button.disabled = false;
   }
-
-  if(_prodEditIdx !== null){
-    // Edição
-    const p = db.produtos[_prodEditIdx];
-    if(!p) { erro.style.display='block'; erro.textContent='Produto não encontrado.'; return; }
-    p.codigo = codigo;
-    p.descricao = descricao;
-    p.cliente = cliente;
-    save();
-    toast(`Produto ${codigo} atualizado.`);
-  } else {
-    // Novo
-    db.produtos.push({ codigo, descricao, cliente });
-    save();
-    toast(`Produto ${codigo} adicionado.`);
-  }
-  fecharModalProduto();
-  renderProd();
 }
-function excluirProduto(idx){
+async function excluirProduto(idx){
+  if(rejectLegacyWrite()) return;
   const p = db.produtos[idx];
   if(!p) return;
   if(!confirm(`Excluir o produto "${p.codigo} — ${p.descricao}" (${p.cliente})?\n\nEssa ação não pode ser desfeita.\nO histórico de devoluções já registradas continuará intacto.`)) return;
-  db.produtos.splice(idx, 1);
-  save();
-  toast(`Produto ${p.codigo} excluído.`);
-  renderProd();
+  try{
+    if(productsSyncActive()) await createProductsRepository().remove(p);
+    db.produtos.splice(idx, 1);
+    save();
+    toast(`Produto ${p.codigo} excluído.`);
+    renderProd();
+  }catch(error){
+    toast(productSyncError(error),'erro');
+  }
 }
 function limparProd(){
+  if(rejectLegacyWrite()) return;
+  if(productsSyncActive()){
+    toast('A limpeza em lote do catálogo ainda não foi liberada.','erro');
+    return;
+  }
   if(confirm('Apagar TODOS os produtos do catálogo? Essa ação não pode ser desfeita.')){
     db.produtos=[];
     save();
@@ -2051,17 +2847,286 @@ function limparProd(){
   }
 }
 
-function renderImport(){
-  const totalImport = (db.importacoes||[]).length;
-  const autocad = db.colaboradores.filter(c=>c.origem==='autocadastro').length;
+function clearImportPreviewState(){
+  window._importPreviewTokens=window._importPreviewTokens||{};
+  ['collaborators','products'].forEach(kind=>{window._importPreviewTokens[kind]=(window._importPreviewTokens[kind]||0)+1;});
+  window._lastImportPreviewByKind={};
+  window._lastImportSourceByKind={};
+  window._remoteImportInProgress={};
+}
+function renderImportRemotePreview(){
+  const canPreviewProducts=productsSyncActive();
   document.getElementById('conteudo').innerHTML=`
-    <div class="page-head"><h1>${rocketIcon('md')} Importar</h1><p>Planilhas .xlsx ou .csv · base: <b>${db.colaboradores.length}</b> colaboradores (${autocad} via formulário) · ${db.produtos.length} produtos · ${totalImport} lote(s).</p></div>
+    <div class="page-head"><h1>${rocketIcon('md')} Importação</h1><p>Selecione um arquivo, revise o resumo e importe somente linhas sem alertas.</p></div>
+    <div class="card"><div class="empty">A prévia não mostra nomes, CPFs, telefones, códigos ou descrições. Linhas duplicadas/inválidas ficam de fora; nada é mesclado nem apagado automaticamente.</div></div>
+    <div class="grid grid-2">
+      <div class="card"><h2>Colaboradores</h2><div class="sub">Colunas: Nome, CPF como texto, Telefone, Ponto e Cliente.</div><input type="file" accept=".csv,.xlsx" onchange="previewImportFile(event,'collaborators')"/><div id="importPreviewResults-collaborators" aria-live="polite"></div></div>
+      <div class="card"><h2>Produtos</h2><div class="sub">Colunas: Código, Descrição e Cliente. Duplicados exigem revisão.</div>${canPreviewProducts?'<input type="file" accept=".csv,.xlsx" onchange="previewImportFile(event,\'products\')"/>':'<div class="empty">Catálogo remoto indisponível; importação de produtos pausada.</div>'}<div id="importPreviewResults-products" aria-live="polite"></div></div>
+    </div>
+    <div class="card"><div class="empty">Limite: 20.000 linhas e 20 MB por arquivo; cada gravação é limitada a um lote.</div></div>`;
+}
+function importPreviewReasonLabel(code){
+  const labels={
+    nome_ausente_ou_nao_textual:'Nome ausente ou não textual',
+    cpf_deve_ser_texto:'CPF numérico; use texto para preservar zeros à esquerda',
+    cpf_vazio_ou_fora_do_limite:'CPF vazio ou fora do limite',
+    telefone_ausente_ou_nao_textual:'Telefone ausente ou não textual',
+    ponto_invalido:'Ponto inválido',
+    cliente_nao_textual:'Cliente precisa estar como texto',
+    cliente_invalido:'Cliente inválido',
+    cpf_repetido_no_arquivo_revisao_manual:'CPF repetido no arquivo · revisar manualmente',
+    cpf_com_correspondencia_existente_revisao_manual:'CPF com correspondência existente · revisar manualmente',
+    codigo_ausente_ou_nao_textual:'Código ausente ou não textual',
+    descricao_ausente_ou_nao_textual:'Descrição ausente ou não textual',
+    produto_repetido_no_arquivo_revisao_manual:'Produto repetido no arquivo · revisar manualmente',
+    produto_ja_cadastrado_revisao_manual:'Produto já cadastrado · revisar manualmente'
+  };
+  return labels[code]||'Revisar linha';
+}
+function renderImportPreviewReport(kind, report){
+  const target=document.getElementById(`importPreviewResults-${kind}`);
+  if(!target) return;
+  const statusLabels={ready:'Sem alerta automático',review:'Revisão manual',invalid:'Inválida'};
+  const displayRows=report.rows.slice(0,200);
+  const limit=kind==='collaborators'?400:500;
+  const source=window._lastImportSourceByKind && window._lastImportSourceByKind[kind];
+  const importAction=report.ready>limit
+    ? `<div class="empty">Há ${report.ready} linhas aptas; divida o arquivo em lotes de até ${limit}.</div>`
+    : report.ready>0 && Array.isArray(source)
+      ? `<div style="margin-top:12px"><button class="btn primary" onclick="confirmarImportacaoRemota('${kind}')">Importar ${report.ready} linha(s) sem alerta</button><div class="sub">${report.review+report.invalid} linha(s) com revisão ou erro serão ignoradas.</div></div>`
+      : '';
+  target.innerHTML=`<div class="grid grid-3" style="margin:12px 0"><div class="stat"><div class="l">Linhas</div><div class="v">${report.total}</div></div><div class="stat ok"><div class="l">Sem alerta</div><div class="v">${report.ready}</div></div><div class="stat warn"><div class="l">Revisão / inválidas</div><div class="v">${report.review+report.invalid}</div></div></div>${report.total>200?'<div class="empty">Mostrando as primeiras 200 linhas; os totais abrangem o arquivo todo.</div>':''}${displayRows.length?`<div style="overflow-x:auto"><table><thead><tr><th>Linha</th><th>Estado</th><th>Motivos</th><th>Duplicados no arquivo</th><th>Correspondências existentes</th></tr></thead><tbody>${displayRows.map(row=>`<tr><td>${row.row}</td><td>${esc(statusLabels[row.status]||'Revisar')}</td><td>${row.reasons.map(importPreviewReasonLabel).map(esc).join('; ')||'—'}</td><td>${row.duplicateRowsInFile}</td><td>${row.existingMatches}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Nenhuma linha de dados para exibir.</div>'}${importAction}`;
+}
+function readImportPreviewRows(file){
+  return new Promise((resolve,reject)=>{
+    if(!file || !Number.isFinite(file.size) || file.size>20*1024*1024){ reject(new Error('Arquivo acima de 20 MB ou inválido.')); return; }
+    const reader=new FileReader();
+    reader.onerror=()=>reject(new Error('Falha ao ler o arquivo local.'));
+    reader.onload=event=>{
+      try{
+        const workbook=XLSX.read(event.target.result,{type:'array'});
+        if(!workbook.SheetNames || !workbook.SheetNames.length) throw new Error('Planilha sem abas.');
+        const worksheet=workbook.Sheets[workbook.SheetNames[0]];
+        const rows=XLSX.utils.sheet_to_json(worksheet,{defval:''});
+        if(rows.length>20000) throw new Error('Arquivo acima de 20.000 linhas.');
+        resolve(rows);
+      }catch(error){ reject(error); }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+async function previewImportFile(event,kind){
+  if(!['collaborators','products'].includes(kind)) return;
+  const input=event && event.target;
+  const targetId=kind==='products'?'importPreviewResults-products':'importPreviewResults-collaborators';
+  const target=document.getElementById(targetId);
+  if(!input || !input.files || !input.files[0]) return;
+  const file=input.files[0];
+  input.value='';
+  window._importPreviewTokens=window._importPreviewTokens||{};
+  const requestToken=(window._importPreviewTokens[kind]||0)+1;
+  window._importPreviewTokens[kind]=requestToken;
+  window._lastImportPreviewByKind=window._lastImportPreviewByKind||{};
+  window._lastImportSourceByKind=window._lastImportSourceByKind||{};
+  delete window._lastImportPreviewByKind[kind];
+  delete window._lastImportSourceByKind[kind];
+  if(!businessDataSyncActive() || !window.RandstadAccessPolicy || !window.RandstadAccessPolicy.canManageBusiness(user)){
+    if(target) target.innerHTML='<div class="empty">A prévia requer perfil gestor/estoque e sincronização autorizada.</div>';
+    return;
+  }
+  if(!window.RandstadImportPreview || (kind==='products'&&!productsSyncActive())){
+    if(target) target.innerHTML='<div class="empty">O módulo remoto necessário ainda não está disponível.</div>';
+    return;
+  }
+  if(kind==='collaborators' && window._collaboratorImportReconciliationRequired){
+    if(target) target.innerHTML='<div class="empty">Conferindo o resultado da última tentativa. Nada será repetido com a prévia anterior.</div>';
+    try{
+      await loadPiiStateFromFirestore(user);
+      window._collaboratorImportReconciliationRequired=false;
+    }catch(_error){
+      if(target) target.innerHTML='<div class="empty">Não foi possível confirmar a última tentativa. Nenhum novo lote foi preparado.</div>';
+      return;
+    }
+  }
+  if(!/\.(csv|xlsx)$/i.test(file.name||'')){
+    if(target) target.innerHTML='<div class="empty">Selecione um arquivo CSV ou XLSX.</div>';
+    return;
+  }
+  if(target) target.innerHTML='<div class="empty">Lendo localmente e analisando sem gravar…</div>';
+  try{
+    const rows=await readImportPreviewRows(file);
+    if(requestToken!==window._importPreviewTokens[kind]) return;
+    if(!businessDataSyncActive() || !window.RandstadAccessPolicy || !window.RandstadAccessPolicy.canManageBusiness(user)) return;
+    const existing=kind==='products'?currentProducts():currentCollaborators();
+    const preview=kind==='products'
+      ? window.RandstadImportPreview.previewProducts(rows,existing)
+      : window.RandstadImportPreview.previewCollaborators(rows,existing);
+    if(requestToken!==window._importPreviewTokens[kind]) return;
+    window._lastImportPreviewByKind=window._lastImportPreviewByKind||{};
+    window._lastImportSourceByKind=window._lastImportSourceByKind||{};
+    window._lastImportPreviewByKind[kind]=preview;
+    window._lastImportSourceByKind[kind]=rows;
+    renderImportPreviewReport(kind,preview);
+  }catch(_error){
+    console.warn('Falha na prévia local de importação; detalhes omitidos por segurança.');
+    if(requestToken!==window._importPreviewTokens[kind]) return;
+    const current=document.getElementById(targetId);
+    if(current) current.innerHTML='<div class="empty">Não foi possível analisar o arquivo; nenhum dado foi gravado.</div>';
+  }
+}
+function importHeaderKey(value){
+  return String(value??'').normalize('NFKD').replace(/\p{M}/gu,'').toLowerCase().replace(/[^a-z0-9]+/g,'');
+}
+function importCell(row, aliases){
+  const entries=Object.entries(row||{});
+  for(const alias of aliases){
+    const key=importHeaderKey(alias);
+    const found=entries.find(([name])=>importHeaderKey(name)===key);
+    if(found) return found[1];
+  }
+  return '';
+}
+function normalizeImportedPoint(value){
+  const point=importHeaderKey(value);
+  if(point==='aurora'||point==='vilaaurora') return 'Aurora';
+  if(point==='francodarocha') return 'Franco da Rocha';
+  if(point==='barueri') return 'Barueri';
+  return '';
+}
+function readyImportRecords(kind, report, sourceRows){
+  return report.rows.filter(row=>row.status==='ready').map(result=>{
+    const source=sourceRows[result.row-2];
+    if(!source) throw new Error('A prévia e o arquivo não correspondem. Selecione o arquivo novamente.');
+    if(kind==='products') return {
+      codigo:String(importCell(source,['Código','Codigo','Cod'])||'').trim(),
+      descricao:String(importCell(source,['Descrição','Descricao','Desc'])||'').trim(),
+      cliente:normalizarCliente(importCell(source,['Cliente']))
+    };
+    const rawCpf=importCell(source,['CPF']);
+    return {
+      nome:String(importCell(source,['Nome'])||'').trim(),
+      cpf:soNum(rawCpf),
+      telefone:String(importCell(source,['Telefone','Tel'])||'').trim(),
+      ponto:normalizeImportedPoint(importCell(source,['Ponto','Unidade'])),
+      cliente:normalizarCliente(importCell(source,['Cliente']))||'',
+      status:'aguardando',
+      dataInsercao:agora(),
+      dataInsercaoISO:new Date().toISOString().slice(0,10),
+      origem:'import'
+    };
+  });
+}
+async function confirmarImportacaoRemota(kind){
+  if(!['collaborators','products'].includes(kind)) return;
+  if(!businessDataSyncActive() || !window.RandstadAccessPolicy
+    || !window.RandstadAccessPolicy.canManageBusiness(user)){
+    toast('Somente gestor/estoque pode importar estes registros.','erro');
+    return;
+  }
+  if(kind==='products'&&!productsSyncActive()){
+    toast('A sincronização do catálogo ainda está bloqueada.','erro');
+    return;
+  }
+  window._remoteImportInProgress=window._remoteImportInProgress||{};
+  if(window._remoteImportInProgress[kind]) return;
+  const report=window._lastImportPreviewByKind&&window._lastImportPreviewByKind[kind];
+  const sourceRows=window._lastImportSourceByKind&&window._lastImportSourceByKind[kind];
+  if(!report||!Array.isArray(sourceRows)||!report.ready){
+    toast('Faça a prévia do arquivo novamente antes de importar.','erro');
+    return;
+  }
+  const limit=kind==='collaborators'?400:500;
+  if(report.ready>limit){
+    toast(`Divida o arquivo em lotes de até ${limit} linhas aptas.`,'erro');
+    return;
+  }
+  let records;
+  try{ records=readyImportRecords(kind,report,sourceRows); }
+  catch(error){ toast(error.message||'Não foi possível preparar a importação.','erro'); return; }
+  if(records.length!==report.ready){
+    toast('A contagem da prévia mudou. Selecione o arquivo novamente.','erro');
+    return;
+  }
+  const label=kind==='collaborators'?'colaboradores':'produtos';
+  if(!confirm(`Gravar ${records.length} ${label} sem alertas no Firestore? Linhas com revisão ou erro serão ignoradas.`)) return;
+  window._remoteImportInProgress[kind]=true;
+  const target=document.getElementById(`importPreviewResults-${kind}`);
+  if(target) target.querySelectorAll('button').forEach(button=>button.disabled=true);
+  let committed=0;
+  try{
+    if(kind==='collaborators'){
+      const created=await createPiiRepository().createCollaborators(records);
+      committed=created.length;
+    }else{
+      const created=await createProductsRepository().upsertMany(records);
+      committed=created.length;
+      const merged=new Map(remoteProducts.map(product=>[product.productKey,product]));
+      created.forEach(product=>merged.set(product.productKey,{
+        codigo:product.codigo,descricao:product.descricao,cliente:product.cliente,productKey:product.productKey
+      }));
+      remoteProducts=[...merged.values()];
+    }
+  }catch(error){
+    delete window._lastImportPreviewByKind[kind];
+    delete window._lastImportSourceByKind[kind];
+    let reconciled=true;
+    if(kind==='collaborators'){
+      window._collaboratorImportReconciliationRequired=true;
+      try{
+        await loadPiiStateFromFirestore(user);
+        window._collaboratorImportReconciliationRequired=false;
+      }catch(_reconcileError){
+        reconciled=false;
+      }
+    }
+    if(target) target.innerHTML=reconciled
+      ? '<div class="empty">A resposta da gravação ficou inconclusiva. Os registros foram recarregados; selecione o arquivo novamente para gerar outra prévia.</div>'
+      : '<div class="empty">Não foi possível confirmar a última tentativa. Nenhum novo lote foi preparado.</div>';
+    toast('Não foi possível confirmar a importação. Refaça a prévia antes de tentar novamente.','erro');
+    return;
+  }finally{
+    window._remoteImportInProgress[kind]=false;
+  }
+  delete window._lastImportPreviewByKind[kind];
+  delete window._lastImportSourceByKind[kind];
+  let refreshed=true;
+  if(kind==='collaborators'){
+    try{ await loadPiiStateFromFirestore(user); }
+    catch(_error){ refreshed=false; }
+  }
+  let historyRecorded=true;
+  try{
+    await createImportHistoryRepository().create({
+      tipo:kind==='collaborators'?'colaboradores':'produtos',
+      totalLinhas:report.total,
+      linhasGravadas:committed,
+      linhasRevisao:report.review,
+      linhasInvalidas:report.invalid
+    });
+  }catch(_historyError){ historyRecorded=false; }
+  renderImport();
+  if(!historyRecorded){
+    toast(`${committed} ${label} gravado(s), mas o histórico não foi registrado. Não repita a importação; atualize o histórico antes de agir novamente.`,'erro');
+    return;
+  }
+  toast(refreshed?`${committed} ${label} gravado(s) e histórico atualizado.`:`${committed} ${label} gravado(s) e histórico atualizado. Atualize a tela para recarregar a lista.`);
+}
+function renderImport(){
+  if(businessDataSyncActive() && window.RandstadAccessPolicy && window.RandstadAccessPolicy.canManageBusiness(user)) return renderImportRemotePreview();
+  if(blockUnmigratedPiiView()) return;
+  const totalImport = (db.importacoes||[]).length;
+  const colaboradores = currentCollaborators();
+  const autocad = colaboradores.filter(c=>c.origem==='autocadastro').length;
+  document.getElementById('conteudo').innerHTML=`
+    <div class="page-head"><h1>${rocketIcon('md')} Importar</h1><p>Planilhas .xlsx ou .csv · base: <b>${colaboradores.length}</b> colaboradores (${autocad} via formulário) · ${db.produtos.length} produtos · ${totalImport} lote(s).</p></div>
 
+    ${window.RandstadAccessPolicy.canEraseBase(user) ? `
     <div class="card" style="border-left:4px solid var(--danger)">
       <h2>${rocketIcon('sm')} Zerar base de testes</h2>
       <div class="sub">Apaga <b>tudo</b>: colaboradores, produtos, devoluções, importações, lavanderia, históricos e cobranças. Use antes de subir uma nova planilha do zero.</div>
       <button class="btn danger" onclick="zerarBase()">🗑 Apagar todos os dados</button>
     </div>
+    ` : ''}
 
     <div class="card" style="border-left:4px solid var(--r-azul)">
       <h2>${rocketIcon('sm')} Formulário público ativo</h2>
@@ -2088,6 +3153,7 @@ function renderImport(){
 }
 function ler(file,cb){const r=new FileReader();r.onload=e=>{const wb=XLSX.read(e.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];cb(XLSX.utils.sheet_to_json(ws,{defval:''}));};r.readAsArrayBuffer(file);}
 function impColab(ev){
+  if(rejectLegacyWrite()) { ev.target.value=''; return; }
   const f=ev.target.files[0]; if(!f) return;
   const nomeArquivo = f.name;
   ler(f,rows=>{
@@ -2115,29 +3181,62 @@ function impColab(ev){
     renderImport();
   });
 }
+async function importarProdutosRows(rows, ev){
+  if(rejectLegacyWrite()) { if(ev) ev.target.value=''; return; }
+  let n=0, ignorados=0, semCliente=0;
+  const sincronizando = productsSyncActive();
+  const catalogo = db.produtos.map(p=>({...p}));
+  const gravar = [];
+  rows.forEach(r=>{
+    const codigo=(r['Código']||r.Codigo||r.codigo||r['CODIGO']||r['Cod']||'').toString().trim();
+    const descricao=(r['Descrição']||r.Descricao||r.descricao||r['DESCRICAO']||r['Desc']||'').toString().trim();
+    const clienteRaw=(r.Cliente||r.cliente||r.CLIENTE||'').toString().trim();
+    if(!codigo && !descricao){ ignorados++; return; }
+    const cliente = normalizarCliente(clienteRaw);
+    if(!cliente) semCliente++;
+    if(sincronizando && (
+      !codigo || codigo.length > 200 ||
+      !descricao || descricao.length > 5000 ||
+      !['Shopee','Mercado Livre'].includes(cliente)
+    )){
+      ignorados++;
+      return;
+    }
+    const produto = {codigo, descricao, cliente};
+    const ex = catalogo.find(p=>p.codigo===codigo && p.cliente===cliente);
+    if(ex) Object.assign(ex, produto);
+    else catalogo.push(produto);
+    gravar.push(produto);
+    n++;
+  });
+
+  if(sincronizando && gravar.length){
+    const repository = createProductsRepository();
+    const gravados = await repository.upsertMany(gravar);
+    const ids = new Map(gravados.map(p=>[p.id,p.productKey]));
+    catalogo.forEach(p=>{
+      try{
+        const id = repository.documentId(p);
+        if(ids.has(id)) p.productKey = ids.get(id);
+      }catch(_){ /* preserva registros locais legados sem chave Firestore */ }
+    });
+  }
+  db.produtos = catalogo;
+  save();
+  let msg = `${n} produto(s) importado(s)`;
+  if(semCliente > 0) msg += ` · ${semCliente} sem cliente válido`;
+  if(ignorados > 0) msg += ` · ${ignorados} linha(s) ignorada(s)`;
+  toast(msg);
+  ev.target.value='';
+  renderImport();
+}
 function impProd(ev){
   const f=ev.target.files[0]; if(!f) return;
   ler(f,rows=>{
-    let n=0, ignorados=0, semCliente=0;
-    rows.forEach(r=>{
-      const codigo=(r['Código']||r.Codigo||r.codigo||r['CODIGO']||r['Cod']||'').toString().trim();
-      const descricao=(r['Descrição']||r.Descricao||r.descricao||r['DESCRICAO']||r['Desc']||'').toString().trim();
-      const clienteRaw=(r.Cliente||r.cliente||r.CLIENTE||'').toString().trim();
-      if(!codigo && !descricao){ ignorados++; return; }
-      const cliente = normalizarCliente(clienteRaw);
-      if(!cliente) semCliente++;
-      const ex = db.produtos.find(p=>p.codigo===codigo && p.cliente===cliente);
-      if(ex){ ex.descricao = descricao; }
-      else { db.produtos.push({codigo, descricao, cliente}); }
-      n++;
+    importarProdutosRows(rows, ev).catch(error=>{
+      toast(productSyncError(error),'erro');
+      ev.target.value='';
     });
-    save();
-    let msg = `${n} produto(s) importado(s)`;
-    if(semCliente > 0) msg += ` · ${semCliente} sem cliente definido`;
-    if(ignorados > 0) msg += ` · ${ignorados} linha(s) vazia(s)`;
-    toast(msg);
-    ev.target.value='';
-    renderImport();
   });
 }
 function modelo(t){
@@ -2150,7 +3249,43 @@ function modelo(t){
   XLSX.utils.book_append_sheet(wb,ws,'Modelo');
   XLSX.writeFile(wb, t==='colab'?'modelo_colaboradores.xlsx':'modelo_produtos.xlsx');
 }
+function formatImportHistoryDate(value){
+  try{
+    const date=value && typeof value.toDate==='function'?value.toDate():value instanceof Date?value:new Date(value);
+    if(!(date instanceof Date) || !Number.isFinite(date.getTime())) return '—';
+    return new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short',timeZone:'America/Sao_Paulo'}).format(date);
+  }catch(_error){ return '—'; }
+}
+async function renderHistImportRemote(){
+  const content=document.getElementById('conteudo');
+  content.innerHTML=`<div class="page-head"><h1>${rocketIcon('md')} Histórico de importações</h1><p>Carregando registros minimizados…</p></div>`;
+  try{
+    const rows=await createImportHistoryRepository().list();
+    content.innerHTML=`
+      <div class="page-head"><h1>${rocketIcon('md')} Histórico de importações</h1><p>${rows.length} registro(s) · máximo de 100.</p></div>
+      <div class="card"><div class="empty">Este histórico não guarda nomes de arquivo, CPFs, telefones, nomes de colaboradores nem conteúdo das planilhas.</div></div>
+      <div class="card">
+        ${rows.length?`<div style="overflow-x:auto"><table>
+          <thead><tr><th>Data/Hora</th><th>Tipo</th><th>Estado</th><th>Linhas</th><th>Gravadas</th><th>Revisão</th><th>Inválidas</th></tr></thead>
+          <tbody>${rows.map(row=>`<tr>
+            <td style="color:var(--muted);font-size:13px">${esc(formatImportHistoryDate(row.dataHora))}</td>
+            <td>${row.tipo==='colaboradores'?'Colaboradores':'Produtos'}</td>
+            <td>${row.status==='concluida'?'Concluída':'—'}</td>
+            <td>${row.totalLinhas}</td>
+            <td style="color:var(--ok);font-weight:700">${row.linhasGravadas}</td>
+            <td style="color:var(--warn)">${row.linhasRevisao}</td>
+            <td style="color:var(--muted)">${row.linhasInvalidas}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>`:`<div class="empty">Nenhuma importação remota registrada.</div>`}
+      </div>`;
+  }catch(_error){
+    content.innerHTML=`<div class="page-head"><h1>${rocketIcon('md')} Histórico de importações</h1></div><div class="card"><div class="empty">Não foi possível carregar o histórico remoto.</div><button class="btn ghost" onclick="renderHistImportRemote()">Tentar novamente</button></div>`;
+  }
+}
 function renderHistImport(){
+  if(businessDataSyncActive() && window.RandstadAccessPolicy
+    && window.RandstadAccessPolicy.canManageBusiness(user)) return renderHistImportRemote();
+  if(blockUnmigratedPiiView()) return;
   const lista = (db.importacoes||[]).slice().reverse();
   document.getElementById('conteudo').innerHTML=`
     <div class="page-head"><h1>${rocketIcon('md')} Histórico de importações</h1><p>${lista.length} lote(s) registrado(s).</p></div>
@@ -2173,6 +3308,7 @@ function renderHistImport(){
 
 /* LAVANDERIA */
 function renderLavanderia(){
+  if(blockUnmigratedPiiView()) return;
   const totalColetados = db.devolucoes.filter(d=>d.coletado).length;
   const lavanderia = (db.lavanderia||[]).slice().reverse();
   const consolidado = produtosColetadosConsolidado();
@@ -2315,6 +3451,7 @@ function renderLavanderia(){
     </div>`;
 }
 function exportarRecibo(cliente, tipo){
+  if(blockUnmigratedPiiView()) return;
   const consolidado = produtosColetadosConsolidado().filter(x=>x.cliente===cliente);
   if(!consolidado.length){ alert('Sem itens para este cliente.'); return; }
   const mapa = {};
@@ -2372,6 +3509,7 @@ function exportarRecibo(cliente, tipo){
   }catch(e){ console.error(e); alert('Erro ao gerar PDF.'); }
 }
 function registrarEnvioLavanderia(ponto, idx){
+  if(rejectLegacyWrite()) return;
   const produtos = produtosColetadosPorPonto(ponto);
   if(!produtos.length){ alert('Nenhum item coletado neste ponto.'); return; }
   const inputVols = document.getElementById(`lavVols-${idx}`);
@@ -2385,6 +3523,7 @@ function registrarEnvioLavanderia(ponto, idx){
   setTimeout(()=>renderLavanderia(), 500);
 }
 function exportarLavanderia(tipo){
+  if(blockUnmigratedPiiView()) return;
   const dados = [];
   (db.lavanderia||[]).slice().reverse().forEach(l=>{
     l.itens.forEach(it=>{
@@ -2441,8 +3580,10 @@ function exportarLavanderia(tipo){
 
 /* BUSCAR / REGISTRAR DEVOLUÇÃO — cliente automático */
 function renderBuscar(){
-  const lista = db.colaboradores
-    .filter(c=>c.ponto===user.ponto && c.status==='aguardando')
+  if(anyFirestoreBusinessGateOpen() && (!businessDataSyncActive() || !productsSyncActive())) return blockUnmigratedPiiView();
+  const colaboradores = currentCollaborators();
+  const lista = colaboradores
+    .filter(c=>normalizePointUi(c.ponto)===normalizePointUi(user.ponto) && c.status==='aguardando')
     .sort((a,b)=>a.nome.localeCompare(b.nome));
   document.getElementById('conteudo').innerHTML=`
     <div class="page-head"><h1>${rocketIcon('md')} Registrar devolução</h1>
@@ -2463,19 +3604,29 @@ function renderBuscar(){
 function renderListaSS(f){
   const el=document.getElementById('ssList'); if(!el) return;
   const q=(f||'').toLowerCase();
-  const items=window._listaSS.filter(c=>!q || c.nome.toLowerCase().includes(q) || soNum(c.cpf).includes(soNum(q)));
+  const items=window._listaSS.map((c,index)=>({c,index})).filter(({c})=>!q || c.nome.toLowerCase().includes(q) || soNum(c.cpf).includes(soNum(q)));
   el.innerHTML = items.length
-    ? items.map(c=>`<div class="item" onmousedown="escolherSS('${esc(c.cpf)}')">
+    ? items.map(({c,index})=>{
+        const selectionId = businessDataSyncActive() ? c.__docId : `local-${index}`;
+        return `<div class="item" onmousedown="escolherSS('${esc(selectionId)}')">
         <div class="name">${esc(c.nome)}</div>
         <div class="meta">${esc(c.cpf)} · ${esc(c.telefone||'sem telefone')} · ${esc(c.cliente||'cliente não definido')}</div>
-      </div>`).join('')
+      </div>`;
+      }).join('')
     : `<div class="item" style="color:var(--muted);cursor:default">Nenhum resultado</div>`;
 }
 function abrirSS(){ const el=document.getElementById('ssList'); if(el) el.classList.add('open'); }
 function fecharSS(){ const el=document.getElementById('ssList'); if(el) el.classList.remove('open'); }
 function filtrarSS(v){ abrirSS(); renderListaSS(v); }
-function escolherSS(cpf){
-  const c = db.colaboradores.find(x=>soNum(x.cpf)===soNum(cpf));
+function escolherSS(selectionId){
+  let c = null;
+  if(businessDataSyncActive()){
+    c = findCollaboratorForUi(selectionId);
+  }else{
+    const match = /^local-(\d+)$/.exec(String(selectionId||''));
+    const index = match ? Number(match[1]) : -1;
+    c = Number.isInteger(index) && index >= 0 ? window._listaSS[index] : null;
+  }
   if(!c) return;
   document.getElementById('ssInput').value = `${c.nome} — ${c.cpf}`;
   fecharSS();
@@ -2537,9 +3688,12 @@ function abrirFormDev(c){
   }
 }
 function escolherClienteManual(cli){
+  if(!['Shopee','Mercado Livre'].includes(cli)) return;
+  const remotePii = businessDataSyncActive();
+  if(!remotePii && rejectLegacyWrite()) return;
   window._clienteSel = cli;
   const c = window._colabAtual;
-  if(c){
+  if(c && !remotePii){
     const colab = db.colaboradores.find(x=>soNum(x.cpf)===soNum(c.cpf));
     if(colab){ colab.cliente = cli; save(); }
   }
@@ -2550,9 +3704,14 @@ function escolherClienteManual(cli){
   renderAreaProdutos();
 }
 function renderAreaProdutos(){
+  if(anyFirestoreBusinessGateOpen() && !productsSyncActive()){
+    const area=document.getElementById('areaProdutos');
+    if(area) area.innerHTML='<div class="card"><div class="empty">O catálogo remoto ainda não foi liberado.</div></div>';
+    return;
+  }
   const cli = window._clienteSel;
   const c = window._colabAtual;
-  const prodsCli = db.produtos.filter(p=>p.cliente===cli);
+  const prodsCli = currentProducts().filter(p=>p.cliente===cli);
   document.getElementById('areaProdutos').innerHTML=`
     <div class="card">
       <h2>4. Produtos devolvidos — ${cli}</h2>
@@ -2560,7 +3719,7 @@ function renderAreaProdutos(){
       <div id="itensDiv"></div>
       ${prodsCli.length ? `<button class="btn ghost sm" style="margin-top:12px" onclick="addItem()">+ Adicionar item</button>` : ''}
       <div style="margin-top:24px">
-        <button class="btn lg" onclick="finalizar('${esc(c.cpf)}')" ${prodsCli.length===0?'disabled style="opacity:.5"':''}>Finalizar e gerar comprovante</button>
+        <button class="btn lg" onclick="finalizar()" ${prodsCli.length===0?'disabled style="opacity:.5"':''}>Finalizar e gerar comprovante</button>
       </div>
     </div>`;
   window._prodsDisponiveis = prodsCli;
@@ -2703,11 +3862,17 @@ function psTeclado(ev, i){
     _psHl = -1;
   }
 }
-function finalizar(cpf){
+function finalizar(){
+  if(businessDataSyncActive()){
+    finalizarRemoto();
+    return;
+  }
+  if(rejectLegacyWrite()) return;
   if(!window._clienteSel){ alert('Cliente não definido.'); return; }
   const itens=window._itens.filter(i=>i.codigo);
   if(!itens.length){ alert('Adicione pelo menos um produto.'); return; }
-  const c=db.colaboradores.find(x=>soNum(x.cpf)===soNum(cpf)); if(!c) return;
+  const c=window._colabAtual;
+  if(!c) return;
   const codigoUnico=gerarCodigo(c.cpf,c.nome,c.ponto);
   const dev={id:Date.now(),cpf:c.cpf,nome:c.nome,telefone:c.telefone,ponto:c.ponto,
     cliente:window._clienteSel,itens,volumes:0,codigoUnico,dataHora:agora(),coletado:false};
@@ -2715,6 +3880,86 @@ function finalizar(cpf){
   c.status='devolvido';
   save();
   mostrarComprovante(dev);
+}
+async function finalizarRemoto(){
+  if(!businessDataSyncActive() || !productsSyncActive()){
+    toast('O cadastro remoto exige dados pessoais e catálogo sincronizados; a operação continua bloqueada.','erro');
+    return;
+  }
+  if(window._savingReturn) return;
+  const state=window.RandstadPiiState;
+  if(!state || !window._colabAtual || !window._colabAtual.__docId){
+    toast('Selecione novamente um cadastro remoto válido.','erro');
+    return;
+  }
+  if(!window._clienteSel || !['Shopee','Mercado Livre'].includes(window._clienteSel)){
+    toast('Selecione um cliente válido antes de continuar.','erro');
+    return;
+  }
+  const itensSelecionados=(window._itens||[]).filter(item=>item.codigo).map(item=>({
+    codigo:String(item.codigo||'').trim(),
+    descricao:String(item.descricao||'').trim(),
+    qtd:Number(item.qtd)
+  }));
+  if(!itensSelecionados.length || itensSelecionados.length>100 || itensSelecionados.some(item=>!item.codigo || !item.descricao || !Number.isSafeInteger(item.qtd) || item.qtd<1)){
+    toast('Confira os produtos e quantidades antes de registrar.','erro');
+    return;
+  }
+  const catalogoCliente=currentProducts().filter(product=>product.cliente===window._clienteSel);
+  const itens=itensSelecionados.map(item=>{
+    const product=catalogoCliente.find(candidate=>candidate.codigo===item.codigo);
+    return product && product.descricao===item.descricao
+      ? {codigo:product.codigo,descricao:product.descricao,qtd:item.qtd}
+      : null;
+  });
+  if(itens.some(item=>!item)){
+    toast('Um produto não corresponde ao catálogo remoto atual. Atualize e selecione novamente.','erro');
+    return;
+  }
+  let colaborador;
+  try{
+    colaborador=state.getCollaborator(user,window._colabAtual.__docId);
+    if(!colaborador || colaborador.status!=='aguardando'){
+      toast('Este cadastro não está mais aguardando devolução. Atualize a lista.','erro');
+      return;
+    }
+    state.assertOpaqueId(colaborador.__docId,'colab');
+    if(colaborador.cliente && colaborador.cliente!==window._clienteSel){
+      toast('O cliente selecionado não corresponde ao cadastro.','erro');
+      return;
+    }
+  }catch(error){
+    toast('Não foi possível validar o cadastro selecionado. Atualize a lista.','erro');
+    return;
+  }
+  window._savingReturn=true;
+  try{
+    const committed=await createPiiRepository().createReturn({
+      colaboradorId:colaborador.__docId,
+      cpf:colaborador.cpf,
+      nome:colaborador.nome,
+      telefone:colaborador.telefone||'',
+      ponto:colaborador.ponto,
+      cliente:window._clienteSel,
+      itens,
+      volumes:0
+    });
+    let receipt=committed;
+    try{
+      receipt=state.recordCommittedReturn(user,committed);
+    }catch(cacheError){
+      console.error('A devolução foi confirmada, mas o cache em memória precisa ser recarregado.',cacheError);
+    }
+    mostrarComprovante(receipt);
+    if(receipt===committed){
+      toast('Registro confirmado; a lista em memória será atualizada na próxima consulta.','erro');
+    }
+  }catch(error){
+    console.error('Falha ao confirmar devolução no Firestore',error);
+    toast('Não foi possível confirmar o resultado no servidor. Nenhum comprovante foi exibido; consulte a lista antes de tentar novamente.','erro');
+  }finally{
+    window._savingReturn=false;
+  }
 }
 function mostrarComprovante(dev){
   window._devAtual = dev;
@@ -2795,7 +4040,56 @@ function enviarEmail(){
   const assunto = `Comprovante de Devolução ${dev.codigoUnico}`;
   window.open(`mailto:?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`, '_blank');
 }
+function renderDevolvRemote(){
+  const allReturns=currentReturns();
+  const byCollaborator=returnsByOpaqueCollaboratorId(currentCollaborators(),allReturns);
+  const returns=[...byCollaborator.values()];
+  const role=String(user && (user.perfilBanco||user.perfil)||'').toLowerCase();
+  const canSeeItems=['gestor','estoque','ponto'].includes(role);
+  const totals=new Map();
+  if(canSeeItems){
+    returns.forEach(item=>{
+      if(!Array.isArray(item.itens) || item.itens.length>100) return;
+      item.itens.forEach(line=>{
+        if(!line || typeof line.codigo!=='string' || !line.codigo.trim()
+          || typeof line.descricao!=='string' || !line.descricao.trim()
+          || !Number.isSafeInteger(line.qtd) || line.qtd<1) return;
+        const key=`${item.cliente}|${line.codigo}`;
+        const current=totals.get(key)||{codigo:line.codigo,descricao:line.descricao,cliente:item.cliente,qtd:0};
+        if(current.qtd+line.qtd<=Number.MAX_SAFE_INTEGER){
+          current.qtd+=line.qtd;
+          totals.set(key,current);
+        }
+      });
+    });
+  }
+  const point=user.ponto||'escopo autorizado';
+  let volumesControl='';
+  if(role==='ponto'){
+    if(!pointsSyncActive()){
+      volumesControl='<div class="card"><h2>Volumes físicos do ponto</h2><div class="empty">A sincronização dos volumes ainda está bloqueada.</div></div>';
+    }else{
+      const volume=getVolumesPonto(user.ponto);
+      volumesControl=Number.isSafeInteger(volume)
+        ? `<div class="card"><h2>Volumes físicos do ponto</h2><p class="sub">Contagem manual, independente das devoluções.</p><div class="volumes-edit"><input type="number" min="0" step="1" id="volsPontoRemote" value="${volume}"/><button class="btn sm" onclick="salvarVolumesPonto('${esc(user.ponto)}','volsPontoRemote')">Salvar</button></div></div>`
+        : '<div class="card"><h2>Volumes físicos do ponto</h2><div class="empty">O gestor ainda não inicializou a contagem deste ponto.</div></div>';
+    }
+  }
+  document.getElementById('conteudo').innerHTML=`
+    <div class="page-head"><h1>${rocketIcon('md')} Produtos devolvidos</h1>
+      <p>Escopo: <b>${esc(point)}</b> · ${returns.length} devolução(ões) confirmada(s).</p></div>
+    <div class="card">
+      <div class="empty" style="margin-bottom:14px">Os volumes físicos do ponto são independentes das devoluções e continuam em uma operação separada.</div>
+      ${canSeeItems && totals.size ? `<div style="overflow-x:auto"><table><thead><tr><th>Código</th><th>Descrição</th><th>Cliente</th><th style="text-align:right">Quantidade</th></tr></thead><tbody>${[...totals.values()].map(item=>`<tr><td><code>${esc(item.codigo)}</code></td><td>${esc(item.descricao)}</td><td>${esc(item.cliente)}</td><td style="text-align:right"><b>${item.qtd}</b></td></tr>`).join('')}</tbody></table></div>` : `<div class="empty">Nenhuma linha de produto disponível neste escopo.</div>`}
+    </div>
+    ${volumesControl}
+    <div class="card"><h2>Devoluções individuais</h2>
+      ${returns.length ? `<div style="overflow-x:auto"><table><thead><tr><th>Protocolo</th><th>Colaborador</th><th>Ponto</th><th>Cliente</th><th>Linhas</th><th>Data</th></tr></thead><tbody>${returns.slice().reverse().map(item=>`<tr><td><code>${esc(item.codigoUnico)}</code></td><td>${esc(item.nome)}</td><td>${esc(item.ponto)}</td><td>${esc(item.cliente)}</td><td>${Array.isArray(item.itens)?item.itens.length:0}</td><td>${esc(item.dataHora)}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">Nenhuma devolução confirmada.</div>'}
+    </div>`;
+}
 function renderDevolv(){
+  if(businessDataSyncActive()) return renderDevolvRemote();
+  if(blockUnmigratedPiiView()) return;
   const ponto = user.ponto;
   const produtos = produtosAgregados(ponto);
   const volumes = getVolumesPonto(ponto);
@@ -2865,13 +4159,26 @@ function renderDevolv(){
       </div>
     </div>`;
 }
-function salvarVolumesPonto(ponto){
-  const v = +document.getElementById('volsPonto').value||0;
-  setVolumesPonto(ponto, v);
-  toast(`Volumes do ponto ${ponto} atualizados para ${v}.`);
+async function salvarVolumesPonto(ponto,inputId='volsPonto'){
+  const input=document.getElementById(inputId);
+  if(!input || !input.value.trim()){
+    alert('Informe um número inteiro de volumes igual ou maior que zero.');
+    return;
+  }
+  const value=Number(input.value);
+  try{
+    const saved=await setVolumesPonto(ponto,value);
+    if(saved===false) return;
+    toast(`Volumes do ponto ${ponto} atualizados para ${saved.volumes}.`);
+    if(aba) navegar(aba);
+  }catch(error){
+    console.error('Falha ao salvar volumes do ponto',error);
+    alert(error && error.message ? error.message : 'Não foi possível salvar os volumes do ponto.');
+  }
 }
 function renderAguard(){
-  const lista=db.colaboradores.filter(c=>c.ponto===user.ponto&&c.status==='aguardando');
+  if(anyFirestoreBusinessGateOpen() && !businessDataSyncActive()) return blockUnmigratedPiiView();
+  const lista=currentCollaborators().filter(c=>normalizePointUi(c.ponto)===normalizePointUi(user.ponto)&&c.status==='aguardando');
   document.getElementById('conteudo').innerHTML=`
     <div class="page-head"><h1>${rocketIcon('md')} Aguardando</h1><p>${lista.length} colaborador(es) no ponto ${user.ponto}.</p></div>
     <div class="card">
@@ -2886,14 +4193,35 @@ function renderAguard(){
 }
 
 /* CLIENTE */
+function renderClienteRemote(){
+  const cli=user.cliente;
+  const returns=currentReturns().filter(item=>item.cliente===cli);
+  const allCollaborators=currentCollaborators();
+  const byCollaborator=returnsByOpaqueCollaboratorId(allCollaborators,returns);
+  const collaborators=allCollaborators.filter(item=>item.cliente===cli || byCollaborator.has(item.__docId));
+  const pending=collaborators.filter(item=>item.status==='aguardando' && !byCollaborator.has(item.__docId));
+  const completed=collaborators.filter(item=>byCollaborator.has(item.__docId));
+  document.getElementById('conteudo').innerHTML=`
+    <div class="page-head"><h1>${rocketIcon('md')} ${esc(cli)}</h1><p>Cadastros do seu cliente · consulta remota somente leitura.</p></div>
+    <div class="grid grid-3" style="margin-bottom:18px"><div class="stat"><div class="l">Cadastros</div><div class="v">${collaborators.length}</div></div><div class="stat warn"><div class="l">Aguardando devolução</div><div class="v">${pending.length}</div></div><div class="stat ok"><div class="l">Devoluções registradas</div><div class="v">${completed.length}</div></div></div>
+    <div class="card"><h2>Colaboradores</h2><div class="sub">Cobranças, volumes físicos e arquivamento histórico não estão disponíveis nesta tela.</div>
+      ${collaborators.length?`<div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>CPF</th><th>Telefone</th><th>Ponto</th><th>Status</th><th>Protocolo</th><th>Data</th></tr></thead><tbody>${collaborators.map(item=>{
+        const record=byCollaborator.get(item.__docId);
+        const isPending=item.status==='aguardando';
+        return `<tr><td>${esc(item.nome)}</td><td><code>${esc(item.cpf)}</code></td><td>${esc(item.telefone||'-')}</td><td>${esc(item.ponto)}</td><td><span class="pill ${isPending?'aguardando':'devolvido'}">${isPending?'Aguardando devolução':'Devolução registrada'}</span></td><td>${record?`<code>${esc(record.codigoUnico)}</code>`:'-'}</td><td>${record?esc(record.dataHora):'-'}</td></tr>`;
+      }).join('')}</tbody></table></div>`:'<div class="empty">Nenhum colaborador deste cliente foi encontrado.</div>'}
+    </div>`;
+}
 function renderCliente(){
+  if(businessDataSyncActive() && user && user.perfilBanco==='cliente') return renderClienteRemote();
+  if(blockUnmigratedPiiView()) return;
   const anoAtual = new Date().getFullYear();
   const mesAtual = String(new Date().getMonth()+1).padStart(2,'0');
   if(!window._cliAno) window._cliAno = String(anoAtual);
   if(!window._cliMes) window._cliMes = mesAtual;
   const cli = user.cliente;
   const colabDoCliente = colaboradoresDoCliente(cli);
-  const devs = db.devolucoes.filter(d=>d.cliente===cli && devMatchesPeriod(d, window._cliAno, window._cliMes));
+  const devs = currentReturns().filter(d=>d.cliente===cli && devMatchesPeriod(d, window._cliAno, window._cliMes));
   const cpfsDev = new Set(devs.map(d=>soNum(d.cpf)));
   const concluidas = colabDoCliente.filter(c=>cpfsDev.has(soNum(c.cpf)));
   const pendentes = colabDoCliente.filter(c=>!cpfsDev.has(soNum(c.cpf)));
@@ -3002,10 +4330,12 @@ function renderCliente(){
     </div>`;
 }
 function cobradoDe(cpf, cliente){
+  if(anyFirestoreBusinessGateOpen()) return null;
   if(!db.cobrancas) db.cobrancas = [];
   return db.cobrancas.find(x=>soNum(x.cpf)===soNum(cpf) && x.cliente===cliente && !x.arquivado);
 }
 function marcarCobrado(cpf, cliente){
+  if(rejectLegacyWrite()) return;
   if(!db.cobrancas) db.cobrancas = [];
   const c = db.colaboradores.find(x=>soNum(x.cpf)===soNum(cpf));
   if(!c) return;
@@ -3016,6 +4346,7 @@ function marcarCobrado(cpf, cliente){
   renderCliente();
 }
 function salvarHistoricoConcluidas(cliente){
+  if(rejectLegacyWrite()) return;
   const anoAtual = window._cliAno;
   const mesAtual = window._cliMes;
   const devs = db.devolucoes.filter(d=>d.cliente===cliente && devMatchesPeriod(d, anoAtual, mesAtual));
@@ -3041,6 +4372,7 @@ function salvarHistoricoConcluidas(cliente){
   renderCliente();
 }
 function salvarHistoricoPendentes(cliente){
+  if(rejectLegacyWrite()) return;
   const anoAtual = window._cliAno;
   const mesAtual = window._cliMes;
   const devs = db.devolucoes.filter(d=>d.cliente===cliente && devMatchesPeriod(d, anoAtual, mesAtual));
@@ -3067,8 +4399,9 @@ function salvarHistoricoPendentes(cliente){
   renderCliente();
 }
 function exportarCliente(tipo){
+  if(blockUnmigratedPiiView()) return;
   const cli = user.cliente;
-  const devs = db.devolucoes.filter(d=>d.cliente===cli && devMatchesPeriod(d, window._cliAno, window._cliMes));
+  const devs = currentReturns().filter(d=>d.cliente===cli && devMatchesPeriod(d, window._cliAno, window._cliMes));
   const cpfsDev = new Set(devs.map(d=>soNum(d.cpf)));
   const colabDoCliente = colaboradoresDoCliente(cli);
   const concluidas = colabDoCliente.filter(c=>cpfsDev.has(soNum(c.cpf)));
@@ -3093,7 +4426,25 @@ function exportarCliente(tipo){
   const mesNome = MESES[+window._cliMes-1] || window._cliMes;
   XLSX.writeFile(wb, `relacao_${tipo}_${cli.replace(/\s/g,'_')}_${mesNome}_${window._cliAno}.xlsx`);
 }
+function renderHistoricoClienteRemote(){
+  const cli=user.cliente;
+  const collaborators=currentCollaborators();
+  const scopedReturns=currentReturns().filter(item=>item.cliente===cli);
+  const returns=[...returnsByOpaqueCollaboratorId(collaborators,scopedReturns).values()].reverse();
+  document.getElementById('conteudo').innerHTML=`
+    <div class="page-head"><h1>${rocketIcon('md')} Histórico · ${esc(cli)}</h1>
+      <p>Histórico remoto somente leitura. Nenhum registro local é arquivado ou removido.</p></div>
+    <div class="grid grid-2" style="margin-bottom:20px">
+      <div class="stat"><div class="l">Devoluções registradas</div><div class="v">${returns.length}</div></div>
+      <div class="stat"><div class="l">Linhas registradas</div><div class="v">${returns.reduce((sum,item)=>sum+(Array.isArray(item.itens)?item.itens.length:0),0)}</div></div>
+    </div>
+    <div class="card"><h2>Registros</h2>
+      ${returns.length?`<div style="overflow-x:auto"><table><thead><tr><th>Protocolo</th><th>Nome</th><th>Ponto</th><th>Linhas</th><th>Data</th></tr></thead><tbody>${returns.map(item=>`<tr><td><code>${esc(item.codigoUnico)}</code></td><td>${esc(item.nome)}</td><td>${esc(item.ponto)}</td><td>${Array.isArray(item.itens)?item.itens.length:0}</td><td>${esc(item.dataHora)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Nenhum registro remoto encontrado.</div>'}
+    </div>`;
+}
 function renderHistoricoCliente(){
+  if(businessDataSyncActive() && user && user.perfilBanco==='cliente') return renderHistoricoClienteRemote();
+  if(blockUnmigratedPiiView()) return;
   const cli = user.cliente;
   const hist = garantirHistorico(cli);
   const concl = hist.concluidas;
@@ -3174,6 +4525,7 @@ function renderHistoricoCliente(){
     </div>`;
 }
 function limparHistorico(cliente, tipo){
+  if(rejectLegacyWrite()) return;
   if(!confirm(`Limpar todo o histórico de ${tipo==='concluidas'?'entregues':'pendentes'}? Essa ação não pode ser desfeita.`)) return;
   const hist = garantirHistorico(cliente);
   if(tipo==='concluidas') hist.concluidas = [];
@@ -3182,13 +4534,26 @@ function limparHistorico(cliente, tipo){
   toast('Histórico limpo.');
   renderHistoricoCliente();
 }
+function renderDashboardClienteRemote(){
+  const cli=user.cliente;
+  const allCollaborators=currentCollaborators();
+  const returns=currentReturns().filter(item=>item.cliente===cli);
+  const byCollaborator=returnsByOpaqueCollaboratorId(allCollaborators,returns);
+  const collaborators=allCollaborators.filter(item=>item.cliente===cli || byCollaborator.has(item.__docId));
+  const pending=collaborators.filter(item=>item.status==='aguardando' && !byCollaborator.has(item.__docId)).length;
+  const done=collaborators.filter(item=>byCollaborator.has(item.__docId)).length;
+  const lines=[...byCollaborator.values()].reduce((sum,item)=>sum+(Array.isArray(item.itens)?item.itens.length:0),0);
+  document.getElementById('conteudo').innerHTML=`<div class="page-head"><h1>${rocketIcon('md')} Dashboard · ${esc(cli)}</h1><p>Indicadores remotos em memória, sem histórico local.</p></div><div class="grid grid-4"><div class="stat"><div class="l">Colaboradores</div><div class="v">${collaborators.length}</div></div><div class="stat warn"><div class="l">Pendentes</div><div class="v">${pending}</div></div><div class="stat ok"><div class="l">Devolvidos</div><div class="v">${done}</div></div><div class="stat"><div class="l">Linhas registradas</div><div class="v">${lines}</div></div></div><div class="card"><div class="empty">Os volumes físicos e cobranças não fazem parte deste painel remoto e continuam separados.</div></div>`;
+}
 function renderDashboardCliente(){
+  if(businessDataSyncActive() && user && user.perfilBanco==='cliente') return renderDashboardClienteRemote();
+  if(blockUnmigratedPiiView()) return;
   const anoAtual = new Date().getFullYear();
   const mesAtual = String(new Date().getMonth()+1).padStart(2,'0');
   if(!window._dashAno) window._dashAno = String(anoAtual);
   if(!window._dashMes) window._dashMes = mesAtual;
   const cli = user.cliente;
-  const devs = db.devolucoes.filter(d=>d.cliente===cli && devMatchesPeriod(d, window._dashAno, window._dashMes));
+  const devs = currentReturns().filter(d=>d.cliente===cli && devMatchesPeriod(d, window._dashAno, window._dashMes));
   const colabDoCliente = colaboradoresDoCliente(cli);
   const cpfsDev = new Set(devs.map(d=>soNum(d.cpf)));
   const totalDev = colabDoCliente.filter(c=>cpfsDev.has(soNum(c.cpf))).length;
@@ -3243,6 +4608,106 @@ function renderDashboardCliente(){
     </div>`;
 }
 function renderColeta(){
+  if(user && user.perfilBanco === 'motorista'){
+    if(individualCollectionSyncActive()) return renderColetaIndividual();
+    if(FIRESTORE_DATA_SYNC_READY){
+      document.getElementById('conteudo').innerHTML=`<div class="page-head"><h1>${rocketIcon('md')} Coletas</h1><p>O fluxo individual ainda não foi liberado.</p></div><div class="card"><div class="empty">A coleta permanece bloqueada até concluir as validações.</div></div>`;
+      return;
+    }
+  }
+  return renderColetaLocal();
+}
+function renderColetaIndividual(){
+  const content = document.getElementById('conteudo');
+  content.innerHTML = `<div class="page-head"><h1>${rocketIcon('md')} Coletas</h1><p>Confira os materiais e confirme o lote do ponto.</p></div><div class="card"><div class="empty">Carregando a fila sanitizada…</div></div>`;
+  Promise.all([
+    createIndividualCollectionRepository().listPending(user.ponto || ''),
+    createPointsRepository().listReadable()
+  ])
+    .then(([{rows}, pointRows])=>{
+      const volumesByPoint = Object.fromEntries(pointRows.map(point=>[point.id, point.volumes]));
+      const groups = new Map();
+      rows.forEach(row=>{
+        if(!groups.has(row.ponto)) groups.set(row.ponto, []);
+        groups.get(row.ponto).push(row);
+      });
+      window._coletaPendenciasPorPonto = Object.fromEntries(groups);
+      window._coletaVolumesPorPonto = volumesByPoint;
+      const cards = [...groups.entries()].map(([ponto, groupRows])=>{
+        const materiais = new Map();
+        groupRows.forEach(row=>row.itensResumo.forEach(item=>{
+          const key = `${item.codigo}|${item.descricao}`;
+          if(!materiais.has(key)) materiais.set(key, {codigo:item.codigo, descricao:item.descricao, qtd:0});
+          materiais.get(key).qtd += item.qtd;
+        }));
+        const produtos = [...materiais.values()].sort((a,b)=>a.codigo.localeCompare(b.codigo));
+        const volumes = volumesByPoint[ponto];
+        if(!Number.isSafeInteger(volumes) || volumes < 0) throw new Error('O total de volumes deste ponto não está disponível no Firestore.');
+        return `<section class="card" style="margin-bottom:14px">
+          <div class="row"><div class="col"><h2>${esc(ponto)}</h2><p class="sub">${groupRows.length} devolução(ões) pendente(s) · ${volumes} volume(s) informados</p></div></div>
+          <div style="overflow-x:auto"><table>
+            <thead><tr><th>Código</th><th>Descrição</th><th style="text-align:right">Qtd</th></tr></thead>
+            <tbody>${produtos.map(item=>`<tr><td><code>${esc(item.codigo)}</code></td><td>${esc(item.descricao)}</td><td style="text-align:right">${item.qtd}</td></tr>`).join('')}</tbody>
+          </table></div>
+          <button class="btn ok lg" style="margin-top:14px" onclick="confirmarColetaLote('${esc(ponto)}')">Confirmar coleta do ponto</button>
+        </section>`;
+      }).join('');
+      content.innerHTML = `<div class="page-head"><h1>${rocketIcon('md')} Coletas</h1><p>A confirmação fecha as devoluções pendentes do ponto. O contador manual de volumes não será alterado.</p></div>
+        ${cards || '<div class="card"><div class="empty">Nenhuma devolução pendente.</div></div>'}`;
+    })
+    .catch(error=>{
+      console.error('Falha ao carregar fila sanitizada', error);
+      content.innerHTML = `<div class="page-head"><h1>${rocketIcon('md')} Coletas</h1></div><div class="card"><div class="empty">Não foi possível carregar a fila segura de coleta.</div><button class="btn ghost" onclick="renderColeta()">Tentar novamente</button></div>`;
+    });
+}
+async function confirmarColetaLote(ponto){
+  if(!individualCollectionSyncActive() || !user || user.perfilBanco !== 'motorista'){
+    alert('A confirmação do lote continua bloqueada para este perfil.');
+    return;
+  }
+  const pendentes = window._coletaPendenciasPorPonto && window._coletaPendenciasPorPonto[ponto] || [];
+  if(!pendentes.length){ alert('Não há devoluções pendentes neste ponto.'); return; }
+  let volumeRecord;
+  try{ volumeRecord = await createPointsRepository().get(ponto); }
+  catch(error){
+    console.error('Falha ao consultar o volume físico do ponto', error);
+    alert('Não foi possível consultar o total de volumes deste ponto. Nenhuma devolução foi confirmada.');
+    return;
+  }
+  if(!volumeRecord || !Number.isSafeInteger(volumeRecord.volumes) || volumeRecord.volumes < 0){
+    alert('O total de volumes deste ponto não está disponível no Firestore. Nenhuma devolução foi confirmada.');
+    return;
+  }
+  const volumes = volumeRecord.volumes;
+  if(!confirm(`Confirmar o lote de ${pendentes.length} devolução(ões) do ponto ${ponto}?\n\nA lista de materiais será enviada por e-mail. A contagem manual de ${volumes} volume(s) não será alterada.`)) return;
+  const repo = createIndividualCollectionRepository();
+  const confirmadas = [];
+  let falha = null;
+  for(const row of pendentes){
+    try{
+      await repo.completeOne(row.returnId);
+      confirmadas.push(row);
+    }catch(error){ falha = error; break; }
+  }
+  if(confirmadas.length){
+    const materiais = new Map();
+    confirmadas.forEach(row=>row.itensResumo.forEach(item=>{
+      const key = `${item.codigo}|${item.descricao}`;
+      if(!materiais.has(key)) materiais.set(key, {codigo:item.codigo, descricao:item.descricao, qtd:0});
+      materiais.get(key).qtd += item.qtd;
+    }));
+    enviarEmailColeta(ponto, [...materiais.values()], volumes);
+  }
+  if(falha){
+    console.error('Falha parcial ao confirmar o lote', falha);
+    alert(`${confirmadas.length} de ${pendentes.length} devolução(ões) foram confirmadas. As restantes continuam pendentes; o relatório inclui apenas as confirmadas.`);
+  }else{
+    toast(`Lote do ponto ${ponto} confirmado.`);
+  }
+  renderColetaIndividual();
+}
+function renderColetaLocal(){
+  if(blockUnmigratedPiiView()) return;
   document.getElementById('conteudo').innerHTML=`
     <div class="page-head"><h1>${rocketIcon('md')} Coletas</h1><p>Selecione o ponto onde você está realizando a coleta.</p></div>
     ${PONTOS.map((p,i)=>{
@@ -3282,14 +4747,13 @@ function renderColeta(){
     }).join('')}`;
 }
 function coletar(ponto){
+  if(rejectLegacyWrite()) return;
+  const pendentes = db.devolucoes.filter(d=>d.ponto===ponto && !d.coletado);
   const produtos = produtosAgregados(ponto);
-  if(!produtos.length){ alert('Nada para coletar neste ponto.'); return; }
+  if(!pendentes.length || !produtos.length){ alert('Nada para coletar neste ponto.'); return; }
   const volumes = getVolumesPonto(ponto);
-  if(!confirm(`Confirmar a coleta do ponto ${ponto}?\n\n${produtos.length} item(ns) · ${volumes} volume(s)\n\nApós confirmar, o saldo será zerado e não poderá ser desfeito.`)) return;
-  gerarPDFColeta(ponto, produtos, volumes);
-  db.devolucoes.forEach(d=>{ if(d.ponto===ponto) d.coletado=true; });
-  db.colaboradores.forEach(c=>{ if(c.ponto===ponto && c.status==='devolvido') c.status='coletado'; });
-  setVolumesPonto(ponto, 0);
+  if(!confirm(`Confirmar a coleta de todas as devoluções pendentes do ponto ${ponto}?\n\n${produtos.length} item(ns) · ${volumes} volume(s)\n\nO saldo pendente será zerado. A contagem manual de volumes não será alterada.`)) return;
+  pendentes.forEach(d=>{ d.coletado=true; });
   save();
   toast(`Coleta do ponto ${ponto} realizada com sucesso!`);
   setTimeout(()=>{ navegar('coleta'); }, 400);
@@ -3334,13 +4798,49 @@ function gerarPDFColeta(ponto, produtos, volumes){
 }
 function enviarEmailColeta(ponto, produtos, volumes){
   const agora_ = new Date().toLocaleString('pt-BR');
-  const corpo = `Coleta realizada no ponto ${ponto} em ${agora_}.\n\nVolumes: ${volumes}\nItens:\n${produtos.map(p=>`• ${p.codigo} — ${p.descricao} — ${p.qtd} un`).join('\n')}\n\nO PDF "coleta_${ponto.replace(/\s/g,'_')}_${hoje()}.pdf" foi gerado e baixado. Anexe-o a este e-mail antes de enviar.`;
+  const lista = produtos.map(p=>`• ${p.codigo} — ${p.descricao} — ${p.qtd} un`).join('\n');
+  const corpo = `Relatório de coleta\nPonto: ${ponto}\nData e hora: ${agora_}\nVolumes informados no ponto: ${volumes}\n\nMateriais coletados:\n${lista}`;
   const assunto = `Coleta realizada — ${ponto} — ${hoje()}`;
   const dest = EMAIL_GESTOR && EMAIL_GESTOR.trim();
   const url = `mailto:${dest}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`;
   try{ const w = window.open(url, '_blank'); if(!w) window.location.href = url; }catch(e){ console.warn('mailto falhou:', e); }
 }
 function renderHist(){
+  const role=String(user && (user.perfilBanco||user.perfil)||'').trim().toLowerCase();
+  if(['gestor','estoque'].includes(role) && individualCollectionSyncActive()) return renderHistIndividual();
+  if(user && user.perfilBanco === 'motorista'){
+    if(individualCollectionSyncActive()) return renderHistIndividual();
+    if(FIRESTORE_DATA_SYNC_READY){
+      document.getElementById('conteudo').innerHTML=`<div class="page-head"><h1>${rocketIcon('md')} Histórico de coletas</h1></div><div class="card"><div class="empty">O histórico individual ainda não foi liberado.</div></div>`;
+      return;
+    }
+  }
+  if(blockUnmigratedPiiView()) return;
+  return renderHistLocal();
+}
+function renderHistIndividual(){
+  const content = document.getElementById('conteudo');
+  content.innerHTML = `<div class="page-head"><h1>${rocketIcon('md')} Histórico de coletas</h1><p>Carregando o histórico sanitizado…</p></div>`;
+  createIndividualCollectionRepository().listCompleted(user.ponto || '')
+    .then(({rows, totals})=>{
+      const sorted = [...rows].sort((a,b)=>{
+        const av = a.coletadoEm && typeof a.coletadoEm.toDate === 'function' ? a.coletadoEm.toDate().getTime() : 0;
+        const bv = b.coletadoEm && typeof b.coletadoEm.toDate === 'function' ? b.coletadoEm.toDate().getTime() : 0;
+        return bv-av;
+      });
+      content.innerHTML = `<div class="page-head"><h1>${rocketIcon('md')} Histórico de coletas</h1><p>${totals.devolucoesColetadas} devolução(ões) confirmada(s).</p></div>
+        <div class="card">${sorted.length ? `<div style="overflow-x:auto"><table>
+          <thead><tr><th>Referência</th><th>Ponto</th><th>Cliente</th><th>Linhas</th><th>Data da coleta</th></tr></thead>
+          <tbody>${sorted.map(row=>`<tr><td><code>${esc(row.returnId.slice(-6).toUpperCase())}</code></td><td>${esc(row.ponto)}</td>
+            <td>${esc(row.cliente)}</td><td>${row.quantidadeLinhas}</td><td>${esc(row.coletadoEm.toDate().toLocaleString('pt-BR'))}</td></tr>`).join('')}</tbody>
+        </table></div>` : '<div class="empty">Nenhuma devolução coletada.</div>'}</div>`;
+    })
+    .catch(error=>{
+      console.error('Falha ao carregar histórico sanitizado', error);
+      content.innerHTML = `<div class="page-head"><h1>${rocketIcon('md')} Histórico de coletas</h1></div><div class="card"><div class="empty">Não foi possível carregar o histórico seguro.</div><button class="btn ghost" onclick="renderHist()">Tentar novamente</button></div>`;
+    });
+}
+function renderHistLocal(){
   const l=db.devolucoes.filter(d=>d.coletado).reverse();
   document.getElementById('conteudo').innerHTML=`
     <div class="page-head"><h1>${rocketIcon('md')} Histórico de coletas</h1><p>${l.length} registro(s).</p></div>
@@ -3354,8 +4854,20 @@ function renderHist(){
       ` : `<div class="empty">Nada coletado.</div>`}
     </div>`;
 }
+function renderRelRemote(){
+  const month=window._mes||localMonthKey();
+  const [year,monthNumber]=month.split('-');
+  const collaborators=currentCollaborators();
+  const linkedReturns=returnsByOpaqueCollaboratorId(collaborators,currentReturns());
+  const records=[...linkedReturns.values()].filter(item=>devMatchesPeriod(item,year,monthNumber));
+  const byPoint=PONTOS.map(point=>({point,count:records.filter(item=>normalizePointUi(item.ponto)===normalizePointUi(point)).length}));
+  const byClient=['Shopee','Mercado Livre'].map(client=>({client,count:records.filter(item=>item.cliente===client).length}));
+  document.getElementById('conteudo').innerHTML=`<div class="page-head"><h1>${rocketIcon('md')} Relatórios</h1><p>Resumo remoto somente leitura · ${esc(month)}.</p></div><div class="card"><label for="remoteReportMonth">Mês</label><input class="input" id="remoteReportMonth" type="month" value="${esc(month)}" onchange="window._mes=this.value;renderRel()"/></div><div class="grid grid-3"><div class="stat"><div class="l">Devoluções registradas</div><div class="v">${records.length}</div></div><div class="stat"><div class="l">Linhas de produto</div><div class="v">${records.reduce((sum,item)=>sum+(Array.isArray(item.itens)?item.itens.length:0),0)}</div></div><div class="stat"><div class="l">Cliente(s)</div><div class="v">${byClient.filter(row=>row.count>0).length}</div></div></div><div class="card"><h2>Por ponto</h2><div style="overflow-x:auto"><table><thead><tr><th>Ponto</th><th>Devoluções</th></tr></thead><tbody>${byPoint.map(row=>`<tr><td>${esc(row.point)}</td><td>${row.count}</td></tr>`).join('')}</tbody></table></div></div><div class="card"><h2>Por cliente</h2><div style="overflow-x:auto"><table><thead><tr><th>Cliente</th><th>Devoluções</th></tr></thead><tbody>${byClient.map(row=>`<tr><td>${esc(row.client)}</td><td>${row.count}</td></tr>`).join('')}</tbody></table></div><div class="empty">Volumes físicos e coletas pendentes não são calculados neste relatório.</div></div>`;
+}
 function renderRel(){
-  const mes=window._mes||new Date().toISOString().slice(0,7);
+  if(businessDataSyncActive()) return renderRelRemote();
+  if(blockUnmigratedPiiView()) return;
+  const mes=window._mes||localMonthKey();
   const ref=mes.split('-').reverse().join('/');
   const linhas=PONTOS.map(p=>{
     const devs=db.devolucoes.filter(d=>d.ponto===p&&d.dataHora.includes(ref));
@@ -3386,6 +4898,7 @@ function renderRel(){
     </div>`;
 }
 function exportRel(mes){
+  if(blockUnmigratedPiiView()) return;
   const ref=mes.split('-').reverse().join('/');
   const dados=[];
   PONTOS.forEach(p=>{
@@ -3401,10 +4914,15 @@ function exportRel(mes){
 }
 
 (function(){
-  const s=sessionStorage.getItem('randstad_user');
-  if(s){ user=JSON.parse(s); boot(); }
-  else {
-    document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')fazerLogin()});
+  const campoSenha = document.getElementById('loginPass');
+  if(campoSenha) campoSenha.addEventListener('keydown',e=>{if(e.key==='Enter')fazerLogin()});
+  try{
+    window.RandstadAuth.listen(
+      aplicarPerfilFirebase,
+      error => exibirErroLogin(window.RandstadAuth.messageFor(error))
+    );
+  }catch(error){
+    exibirErroLogin(window.RandstadAuth.messageFor(error));
   }
 })();
 </script>
