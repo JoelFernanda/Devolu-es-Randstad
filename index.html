@@ -2867,25 +2867,30 @@ function clearImportPreviewState(){
   ['collaborators','products'].forEach(kind=>{window._importPreviewTokens[kind]=(window._importPreviewTokens[kind]||0)+1;});
   window._lastImportPreviewByKind={};
   window._lastImportSourceByKind={};
+  window._lastImportFileNameByKind={};
   window._remoteImportInProgress={};
 }
 function renderImportRemotePreview(){
   const canPreviewProducts=productsSyncActive();
   document.getElementById('conteudo').innerHTML=`
-    <div class="page-head"><h1>${rocketIcon('md')} Importação</h1><p>Selecione um arquivo, revise o resumo e importe somente linhas sem alertas.</p></div>
+    <div class="page-head"><h1>${rocketIcon('md')} Importação</h1><p>A prévia não grava nada. Confira os avisos e clique em <b>Importar</b> para gravar as linhas aptas; ao trocar de aba, a prévia fica nesta sessão.</p></div>
     <div class="card"><div class="empty">A prévia não mostra nomes, CPFs, telefones, códigos ou descrições. Linhas duplicadas/inválidas ficam de fora; nada é mesclado nem apagado automaticamente.</div></div>
     <div class="grid grid-2">
-      <div class="card"><h2>Colaboradores</h2><div class="sub">Colunas: Nome, CPF como texto, Telefone, Ponto e Cliente.</div><input type="file" accept=".csv,.xlsx" onchange="previewImportFile(event,'collaborators')"/><div id="importPreviewResults-collaborators" aria-live="polite"></div></div>
-      <div class="card"><h2>Produtos</h2><div class="sub">Colunas: Código, Descrição e Cliente. Duplicados exigem revisão.</div>${canPreviewProducts?'<input type="file" accept=".csv,.xlsx" onchange="previewImportFile(event,\'products\')"/>':'<div class="empty">Catálogo remoto indisponível; importação de produtos pausada.</div>'}<div id="importPreviewResults-products" aria-live="polite"></div></div>
+      <div class="card"><h2>Colaboradores</h2><div class="sub">Colunas: Nome, CPF como texto, Telefone, Ponto e Cliente. Telefone aceita número/texto e será formatado; pontos: Aurora, Franco da Rocha ou Barueri.</div><input type="file" accept=".csv,.xlsx" onchange="previewImportFile(event,'collaborators')"/><div id="importPreviewResults-collaborators" aria-live="polite"></div></div>
+      <div class="card"><h2>Produtos</h2><div class="sub">Colunas: Código, Descrição e Cliente. Duplicado significa o mesmo código + cliente repetido na planilha ou já existente no catálogo.</div>${canPreviewProducts?'<input type="file" accept=".csv,.xlsx" onchange="previewImportFile(event,\'products\')"/>':'<div class="empty">Catálogo remoto indisponível; importação de produtos pausada.</div>'}<div id="importPreviewResults-products" aria-live="polite"></div></div>
     </div>
     <div class="card"><div class="empty">Limite: 20.000 linhas e 20 MB por arquivo; cada gravação é limitada a um lote.</div></div>`;
+  ['collaborators','products'].forEach(kind=>{
+    const report=window._lastImportPreviewByKind&&window._lastImportPreviewByKind[kind];
+    if(report) renderImportPreviewReport(kind,report);
+  });
 }
 function importPreviewReasonLabel(code){
   const labels={
     nome_ausente_ou_nao_textual:'Nome ausente ou não textual',
     cpf_deve_ser_texto:'CPF numérico; use texto para preservar zeros à esquerda',
     cpf_vazio_ou_fora_do_limite:'CPF vazio ou fora do limite',
-    telefone_ausente_ou_nao_textual:'Telefone ausente ou não textual',
+    telefone_ausente_ou_invalido:'Telefone ausente ou inválido; informe DDD e número com 10 ou 11 dígitos',
     ponto_invalido:'Ponto inválido',
     cliente_nao_textual:'Cliente precisa estar como texto',
     cliente_invalido:'Cliente inválido',
@@ -2893,8 +2898,8 @@ function importPreviewReasonLabel(code){
     cpf_com_correspondencia_existente_revisao_manual:'CPF com correspondência existente · revisar manualmente',
     codigo_ausente_ou_nao_textual:'Código ausente ou não textual',
     descricao_ausente_ou_nao_textual:'Descrição ausente ou não textual',
-    produto_repetido_no_arquivo_revisao_manual:'Produto repetido no arquivo · revisar manualmente',
-    produto_ja_cadastrado_revisao_manual:'Produto já cadastrado · revisar manualmente'
+    produto_repetido_no_arquivo_revisao_manual:'Mesmo código e cliente repetidos na planilha · revisar manualmente',
+    produto_ja_cadastrado_revisao_manual:'Esse código já consta no catálogo para este cliente · revisar manualmente'
   };
   return labels[code]||'Revisar linha';
 }
@@ -2902,15 +2907,25 @@ function renderImportPreviewReport(kind, report){
   const target=document.getElementById(`importPreviewResults-${kind}`);
   if(!target) return;
   const statusLabels={ready:'Sem alerta automático',review:'Revisão manual',invalid:'Inválida'};
-  const displayRows=report.rows.slice(0,200);
+  const issueRows=report.rows.filter(row=>row.status!=='ready');
+  const displayRows=issueRows.length?issueRows.slice(0,200):report.rows.slice(0,20);
   const limit=kind==='collaborators'?400:500;
-  const source=window._lastImportSourceByKind && window._lastImportSourceByKind[kind];
+  const source=window._lastImportSourceByKind&&window._lastImportSourceByKind[kind];
+  const fileName=window._lastImportFileNameByKind&&window._lastImportFileNameByKind[kind];
   const importAction=report.ready>limit
     ? `<div class="empty">Há ${report.ready} linhas aptas; divida o arquivo em lotes de até ${limit}.</div>`
-    : report.ready>0 && Array.isArray(source)
-      ? `<div style="margin-top:12px"><button class="btn primary" onclick="confirmarImportacaoRemota('${kind}')">Importar ${report.ready} linha(s) sem alerta</button><div class="sub">${report.review+report.invalid} linha(s) com revisão ou erro serão ignoradas.</div></div>`
+    : report.ready>0&&Array.isArray(source)
+      ? `<div style="margin:12px 0"><button class="btn primary" onclick="confirmarImportacaoRemota('${kind}')">Importar ${report.ready} linha(s) sem alerta</button><div class="sub">${report.review+report.invalid} linha(s) com revisão ou erro serão ignoradas.</div></div>`
       : '';
-  target.innerHTML=`<div class="grid grid-3" style="margin:12px 0"><div class="stat"><div class="l">Linhas</div><div class="v">${report.total}</div></div><div class="stat ok"><div class="l">Sem alerta</div><div class="v">${report.ready}</div></div><div class="stat warn"><div class="l">Revisão / inválidas</div><div class="v">${report.review+report.invalid}</div></div></div>${report.total>200?'<div class="empty">Mostrando as primeiras 200 linhas; os totais abrangem o arquivo todo.</div>':''}${displayRows.length?`<div style="overflow-x:auto"><table><thead><tr><th>Linha</th><th>Estado</th><th>Motivos</th><th>Duplicados no arquivo</th><th>Correspondências existentes</th></tr></thead><tbody>${displayRows.map(row=>`<tr><td>${row.row}</td><td>${esc(statusLabels[row.status]||'Revisar')}</td><td>${row.reasons.map(importPreviewReasonLabel).map(esc).join('; ')||'—'}</td><td>${row.duplicateRowsInFile}</td><td>${row.existingMatches}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Nenhuma linha de dados para exibir.</div>'}${importAction}`;
+  const rowsNote=issueRows.length
+    ? `<div class="empty">Mostrando ${Math.min(issueRows.length,200)} de ${issueRows.length} linha(s) com alerta; ${report.ready} linha(s) sem alerta.</div>`
+    : report.total>20
+      ? '<div class="empty">Mostrando as primeiras 20 linhas sem alerta; os totais abrangem o arquivo todo.</div>'
+      : '';
+  const table=displayRows.length
+    ? `<div style="overflow-x:auto"><table><thead><tr><th>Linha</th><th>Estado</th><th>Motivos</th><th>Duplicados no arquivo</th><th>Correspondências existentes</th></tr></thead><tbody>${displayRows.map(row=>`<tr><td>${row.row}</td><td>${esc(statusLabels[row.status]||'Revisar')}</td><td>${row.reasons.map(importPreviewReasonLabel).map(esc).join('; ')||'—'}</td><td>${row.duplicateRowsInFile}</td><td>${row.existingMatches}</td></tr>`).join('')}</tbody></table></div>`
+    : '<div class="empty">Nenhuma linha de dados para exibir.</div>';
+  target.innerHTML=`<div class="grid grid-3" style="margin:12px 0"><div class="stat"><div class="l">Linhas</div><div class="v">${report.total}</div></div><div class="stat ok"><div class="l">Sem alerta</div><div class="v">${report.ready}</div></div><div class="stat warn"><div class="l">Revisão / inválidas</div><div class="v">${report.review+report.invalid}</div></div></div>${fileName?`<div class="sub">Arquivo carregado nesta sessão: <b>${esc(String(fileName))}</b></div>`:''}${importAction}${rowsNote}${table}`;
 }
 function readImportPreviewRows(file){
   return new Promise((resolve,reject)=>{
@@ -2943,8 +2958,10 @@ async function previewImportFile(event,kind){
   window._importPreviewTokens[kind]=requestToken;
   window._lastImportPreviewByKind=window._lastImportPreviewByKind||{};
   window._lastImportSourceByKind=window._lastImportSourceByKind||{};
+  window._lastImportFileNameByKind=window._lastImportFileNameByKind||{};
   delete window._lastImportPreviewByKind[kind];
   delete window._lastImportSourceByKind[kind];
+  delete window._lastImportFileNameByKind[kind];
   if(!businessDataSyncActive() || !window.RandstadAccessPolicy || !window.RandstadAccessPolicy.canManageBusiness(user)){
     if(target) target.innerHTML='<div class="empty">A prévia requer perfil gestor/estoque e sincronização autorizada.</div>';
     return;
@@ -2981,6 +2998,7 @@ async function previewImportFile(event,kind){
     window._lastImportSourceByKind=window._lastImportSourceByKind||{};
     window._lastImportPreviewByKind[kind]=preview;
     window._lastImportSourceByKind[kind]=rows;
+    window._lastImportFileNameByKind[kind]=String(file.name||'Planilha selecionada').slice(0,160);
     renderImportPreviewReport(kind,preview);
   }catch(_error){
     console.warn('Falha na prévia local de importação; detalhes omitidos por segurança.');
@@ -3002,18 +3020,16 @@ function importCell(row, aliases){
   return '';
 }
 function normalizeImportedPoint(value){
-  const point=importHeaderKey(value);
-  if(point==='aurora'||point==='vilaaurora') return 'Aurora';
-  if(point==='francodarocha') return 'Franco da Rocha';
-  if(point==='barueri') return 'Barueri';
-  return '';
+  return window.RandstadImportPreview&&typeof window.RandstadImportPreview.normalizePoint==='function'
+    ? window.RandstadImportPreview.normalizePoint(value)
+    : '';
 }
 function readyImportRecords(kind, report, sourceRows){
   return report.rows.filter(row=>row.status==='ready').map(result=>{
     const source=sourceRows[result.row-2];
     if(!source) throw new Error('A prévia e o arquivo não correspondem. Selecione o arquivo novamente.');
     if(kind==='products') return {
-      codigo:String(importCell(source,['Código','Codigo','Cod'])||'').trim(),
+      codigo:String(importCell(source,['Código','Codigo','Cod'])??'').trim(),
       descricao:String(importCell(source,['Descrição','Descricao','Desc'])||'').trim(),
       cliente:normalizarCliente(importCell(source,['Cliente']))
     };
@@ -3021,7 +3037,7 @@ function readyImportRecords(kind, report, sourceRows){
     return {
       nome:String(importCell(source,['Nome'])||'').trim(),
       cpf:soNum(rawCpf),
-      telefone:String(importCell(source,['Telefone','Tel'])||'').trim(),
+      telefone:window.RandstadImportPreview.normalizePhone(importCell(source,['Telefone','Tel'])),
       ponto:normalizeImportedPoint(importCell(source,['Ponto','Unidade'])),
       cliente:normalizarCliente(importCell(source,['Cliente']))||'',
       status:'aguardando',
@@ -3084,6 +3100,7 @@ async function confirmarImportacaoRemota(kind){
   }catch(error){
     delete window._lastImportPreviewByKind[kind];
     delete window._lastImportSourceByKind[kind];
+    delete window._lastImportFileNameByKind[kind];
     let reconciled=true;
     if(kind==='collaborators'){
       window._collaboratorImportReconciliationRequired=true;
@@ -3104,6 +3121,7 @@ async function confirmarImportacaoRemota(kind){
   }
   delete window._lastImportPreviewByKind[kind];
   delete window._lastImportSourceByKind[kind];
+  delete window._lastImportFileNameByKind[kind];
   let refreshed=true;
   if(kind==='collaborators'){
     try{ await loadPiiStateFromFirestore(user); }

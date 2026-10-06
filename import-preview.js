@@ -8,10 +8,6 @@
   'use strict';
 
   const MAX_ROWS = 20000;
-  const POINTS = new Map([
-    ['aurora', 'Aurora'], ['vila aurora', 'Aurora'],
-    ['franco da rocha', 'Franco da Rocha'], ['barueri', 'Barueri'],
-  ]);
   const CLIENTS = new Map([
     ['sh', 'Shopee'], ['shopee', 'Shopee'],
     ['ml', 'Mercado Livre'], ['mercado livre', 'Mercado Livre'],
@@ -42,6 +38,36 @@
     return typeof value === 'string' ? value.trim() : '';
   }
 
+  function codeText(value) {
+    if (typeof value === 'string') return value.trim();
+    if (typeof value === 'number' && Number.isSafeInteger(value)) return String(value);
+    return '';
+  }
+
+  function normalizePoint(value) {
+    if (typeof value !== 'string') return '';
+    const point = fold(value);
+    if (point === 'aurora' || point.includes('vilaaurora')) return 'Aurora';
+    if (point.includes('francodarocha')) return 'Franco da Rocha';
+    if (point.includes('barueri')) return 'Barueri';
+    return '';
+  }
+
+  function normalizePhone(value) {
+    if (typeof value !== 'string'
+      && !(typeof value === 'number' && Number.isSafeInteger(value) && value >= 0)) return '';
+    let digits = String(value).replace(/\D/g, '');
+    if ((digits.length === 12 || digits.length === 13) && digits.startsWith('55')) {
+      digits = digits.slice(2);
+    }
+    if (!/^\d{10,11}$/.test(digits)) return '';
+    const ddd = digits.slice(0, 2);
+    const number = digits.slice(2);
+    return number.length === 9
+      ? `(${ddd}) ${number.slice(0, 5)}-${number.slice(5)}`
+      : `(${ddd}) ${number.slice(0, 4)}-${number.slice(4)}`;
+  }
+
   function report(rows) {
     const totals = { total: rows.length, ready: 0, review: 0, invalid: 0, rows };
     rows.forEach((item) => { totals[item.status] += 1; });
@@ -68,8 +94,8 @@
       if (!text(nameValue)) reasons.push('nome_ausente_ou_nao_textual');
       if (typeof cpfValue !== 'string') reasons.push('cpf_deve_ser_texto');
       else if (!cpf || cpf.length > 20) reasons.push('cpf_vazio_ou_fora_do_limite');
-      if (!text(phoneValue)) reasons.push('telefone_ausente_ou_nao_textual');
-      const point = typeof pointValue === 'string' ? POINTS.get(pointValue.trim().toLowerCase()) || '' : '';
+      if (!normalizePhone(phoneValue)) reasons.push('telefone_ausente_ou_invalido');
+      const point = normalizePoint(pointValue);
       if (!point) reasons.push('ponto_invalido');
       let client = '';
       if (typeof clientValue !== 'string') reasons.push('cliente_nao_textual');
@@ -109,7 +135,7 @@
       const descriptionValue = first(row, 'Descrição', 'Descricao', 'Desc');
       const clientValue = first(row, 'Cliente');
       const reasons = [];
-      const code = text(codeValue);
+      const code = codeText(codeValue);
       if (!code) reasons.push('codigo_ausente_ou_nao_textual');
       if (!text(descriptionValue)) reasons.push('descricao_ausente_ou_nao_textual');
       let client = '';
@@ -150,5 +176,5 @@
     }));
   }
 
-  return Object.freeze({ MAX_ROWS, previewCollaborators, previewProducts });
+  return Object.freeze({ MAX_ROWS, previewCollaborators, previewProducts, normalizePhone, normalizePoint });
 });
