@@ -43,6 +43,7 @@
     <label for="password">Senha</label>
     <input id="password" type="password" autocomplete="current-password">
     <button id="loginButton" type="button">Entrar</button>
+    <p id="loginError" role="alert" style="color:#a32323;min-height:1.5em"></p>
   </section>
   <section id="app">
     <p class="small" id="profile"></p>
@@ -77,10 +78,12 @@
   sessionStorage.setItem(CODE_STORAGE_KEY, $('code').value);
 
   function showError(text) {
-    $('error').textContent = text || 'A operação não foi concluída.';
+    const target = $('login').style.display === 'none' ? $('error') : $('loginError');
+    target.textContent = text || 'A operação não foi concluída.';
     $('status').textContent = '';
   }
   function clearMessages() {
+    $('loginError').textContent = '';
     $('error').textContent = '';
     $('status').textContent = '';
   }
@@ -139,7 +142,10 @@
       $('managerFields').style.display = managerRoles.has(role) ? 'block' : 'none';
       await refresh();
     } catch (error) {
-      showError(window.RandstadAuth.messageFor(error));
+      const auth = window.RandstadAuth;
+      showError(auth && typeof auth.messageFor === 'function'
+        ? auth.messageFor(error)
+        : 'O módulo de autenticação não carregou.');
     } finally {
       $('loginButton').disabled = false;
     }
