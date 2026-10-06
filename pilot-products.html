@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2175D9">
+  <title>Piloto de sincronização do catálogo · Randstad</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#172033;background:#f4f7fb}
+    body{margin:0;padding:24px;max-width:820px;margin-inline:auto}
+    main{background:#fff;border:1px solid #dce3ed;border-radius:14px;padding:22px;box-shadow:0 8px 28px #13243a12}
+    h1{font-size:1.45rem;margin:0 0 8px;color:#1559a6}
+    p{line-height:1.5}
+    .note{background:#eef6ff;border-left:4px solid #2175d9;padding:12px;margin:16px 0}
+    label{display:block;font-weight:600;margin:12px 0 5px}
+    input,select,button{font:inherit;padding:10px;border:1px solid #bcc8d8;border-radius:8px}
+    input,select{width:100%;box-sizing:border-box}
+    button{cursor:pointer;background:#2175d9;color:#fff;border:0;margin:8px 8px 0 0}
+    button.secondary{background:#edf2f8;color:#172033;border:1px solid #cbd5e1}
+    button:disabled{opacity:.55;cursor:not-allowed}
+    #app{display:none;margin-top:18px;border-top:1px solid #e2e8f0;padding-top:14px}
+    #status{min-height:1.5em;color:#194d25}
+    #error{color:#a32323;min-height:1.5em}
+    table{border-collapse:collapse;width:100%;margin-top:12px}
+    th,td{text-align:left;border-bottom:1px solid #e2e8f0;padding:8px;overflow-wrap:anywhere}
+    .small{font-size:.9rem;color:#4b5563}
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+  <script src="./firebase-config.js"></script>
+  <script src="./firebase-auth.js"></script>
+  <script src="./firestore-products.js"></script>
+</head>
+<body>
+<main>
+  <h1>Piloto: catálogo sincronizado</h1>
+  <p>Esta tela isolada testa somente leitura e gravação do catálogo de produtos no Firestore, usando o repositório já existente do app.</p>
+  <div class="note"><strong>Escopo:</strong> não acessa colaboradores, CPF, devoluções, coletas ou volumes. O registro deve começar com <strong>TESTE-SYNC-</strong> e ser removido após a conferência.</div>
+  <section id="login">
+    <label for="email">E-mail da conta do app</label>
+    <input id="email" type="email" autocomplete="username">
+    <label for="password">Senha</label>
+    <input id="password" type="password" autocomplete="current-password">
+    <button id="loginButton" type="button">Entrar</button>
+  </section>
+  <section id="app">
+    <p class="small" id="profile"></p>
+    <div id="managerFields" style="display:none">
+      <label for="code">Código sintético deste teste</label>
+      <input id="code" readonly maxlength="200">
+      <p class="small">O código é único para esta sessão. A descrição e o cliente do registro de teste são fixos.</p>
+      <button id="createButton" type="button">Gravar registro sintético</button>
+      <button id="removeButton" type="button" class="secondary">Remover registro sintético</button>
+    </div>
+    <button id="refreshButton" type="button" class="secondary">Atualizar catálogo</button>
+    <button id="logoutButton" type="button" class="secondary">Sair</button>
+    <p id="status" role="status"></p>
+    <p id="error" role="alert"></p>
+    <div id="catalog"></div>
+  </section>
+</main>
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  let profile = null;
+  let repository = null;
+  const managerRoles = new Set(['gestor', 'estoque']);
+  const PILOT_CLIENT = 'Shopee';
+  const PILOT_DESCRIPTION = 'Produto sintético do piloto de sincronização; sem dados pessoais.';
+  const CODE_STORAGE_KEY = 'randstad-products-pilot-code-v1';
+  const randomSuffix = () => Math.random().toString(36).slice(2, 8).toUpperCase();
+  const syntheticCode = () => $('code').value.trim();
+  $('code').value = sessionStorage.getItem(CODE_STORAGE_KEY)
+    || `TESTE-SYNC-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${randomSuffix()}`;
+  sessionStorage.setItem(CODE_STORAGE_KEY, $('code').value);
+
+  function showError(text) {
+    $('error').textContent = text || 'A operação não foi concluída.';
+    $('status').textContent = '';
+  }
+  function clearMessages() {
+    $('error').textContent = '';
+    $('status').textContent = '';
+  }
+  function syntheticProduct() {
+    const codigo = syntheticCode();
+    if (!codigo.startsWith('TESTE-SYNC-')) throw new Error('O código sintético não está correto.');
+    return { codigo, descricao: PILOT_DESCRIPTION, cliente: PILOT_CLIENT };
+  }
+  function render(rows) {
+    const host = $('catalog');
+    host.replaceChildren();
+    if (!rows.length) {
+      host.textContent = 'O catálogo remoto está vazio.';
+      return;
+    }
+    const table = document.createElement('table');
+    const head = document.createElement('thead');
+    const header = document.createElement('tr');
+    ['Código', 'Descrição', 'Cliente'].forEach((text) => {
+      const cell = document.createElement('th'); cell.textContent = text; header.appendChild(cell);
+    });
+    head.appendChild(header); table.appendChild(head);
+    const body = document.createElement('tbody');
+    rows.forEach((row) => {
+      const tr = document.createElement('tr');
+      [row.codigo, row.descricao, row.cliente].forEach((text) => {
+        const cell = document.createElement('td'); cell.textContent = String(text || ''); tr.appendChild(cell);
+      });
+      body.appendChild(tr);
+    });
+    table.appendChild(body); host.appendChild(table);
+  }
+  async function refresh() {
+    clearMessages();
+    try {
+      const rows = await repository.list();
+      render(rows);
+      $('status').textContent = `Catálogo carregado do Firestore: ${rows.length} registro(s).`;
+    } catch (_) {
+      showError('Não foi possível ler o catálogo remoto. Confira as regras do piloto.');
+    }
+  }
+  async function login() {
+    clearMessages();
+    $('loginButton').disabled = true;
+    try {
+      await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION);
+      profile = await window.RandstadAuth.signIn($('email').value.trim(), $('password').value);
+      const role = String(profile.perfilBanco || profile.perfil || '').toLowerCase();
+      const { firestore } = window.RandstadAuth.initialize();
+      repository = window.RandstadProductsRepository.create({ firestore, profile, syncEnabled: true });
+      $('login').style.display = 'none';
+      $('app').style.display = 'block';
+      $('profile').textContent = `Sessão: ${profile.email || ''} · perfil ${role}`;
+      $('managerFields').style.display = managerRoles.has(role) ? 'block' : 'none';
+      await refresh();
+    } catch (error) {
+      showError(window.RandstadAuth.messageFor(error));
+    } finally {
+      $('loginButton').disabled = false;
+    }
+  }
+  async function create() {
+    clearMessages();
+    $('createButton').disabled = true;
+    try {
+      const result = await repository.create(syntheticProduct());
+      $('status').textContent = `Registro gravado no catálogo remoto: ${result.codigo}.`;
+      await refresh();
+    } catch (error) {
+      showError(error && error.message ? error.message : 'Não foi possível gravar o registro sintético.');
+    } finally {
+      $('createButton').disabled = false;
+    }
+  }
+  async function remove() {
+    clearMessages();
+    $('removeButton').disabled = true;
+    try {
+      const product = syntheticProduct();
+      const stored = await repository.get(product);
+      if (!stored || stored.descricao !== PILOT_DESCRIPTION || stored.cliente !== PILOT_CLIENT) {
+        throw new Error('O registro não corresponde ao produto sintético desta sessão.');
+      }
+      await repository.remove(product);
+      $('status').textContent = 'Registro sintético removido do catálogo remoto.';
+      await refresh();
+    } catch (error) {
+      showError(error && error.message ? error.message : 'Não foi possível remover o registro sintético.');
+    } finally {
+      $('removeButton').disabled = false;
+    }
+  }
+  async function logout() {
+    clearMessages();
+    try { await window.RandstadAuth.signOut(); } catch (_) {}
+    location.reload();
+  }
+
+  $('loginButton').addEventListener('click', login);
+  $('createButton').addEventListener('click', create);
+  $('removeButton').addEventListener('click', remove);
+  $('refreshButton').addEventListener('click', refresh);
+  $('logoutButton').addEventListener('click', logout);
+  $('password').addEventListener('keydown', (event) => { if (event.key === 'Enter') login(); });
+})();
+</script>
+</body>
+</html>
