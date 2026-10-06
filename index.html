@@ -174,6 +174,9 @@
   .btn.sm{padding:8px 13px;font-size:13px;border-radius:9px}
   .btn.lg{padding:14px 22px;font-size:15px;border-radius:12px}
   .btn.full{width:100%}
+  #btnLogin:disabled{opacity:.82;cursor:wait;filter:none;transform:none}
+  .login-spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.38);border-top-color:#fff;border-radius:50%;display:inline-block;flex-shrink:0;animation:loginSpinnerRotate .75s linear infinite}
+  @keyframes loginSpinnerRotate{to{transform:rotate(360deg)}}
   .btn.xs{padding:6px 10px;font-size:12px;border-radius:8px}
 
   .hint{font-size:12.5px;color:var(--muted-2);line-height:2}
@@ -914,9 +917,10 @@
         <label>Senha</label>
         <input id="loginPass" class="input" type="password" autocomplete="current-password" placeholder="Sua senha"/>
       </div>
-      <button class="btn full" onclick="fazerLogin()">
-        <svg class="rocket-icon sm" viewBox="0 0 120 120"><use href="#rocket-svg"/></svg>
-        Acessar
+      <button class="btn full" id="btnLogin" onclick="fazerLogin()" aria-live="polite">
+        <svg class="rocket-icon sm" id="loginBtnIcon" viewBox="0 0 120 120"><use href="#rocket-svg"/></svg>
+        <span class="login-spinner hidden" id="loginSpinner" aria-hidden="true"></span>
+        <span id="loginBtnLabel">Acessar</span>
       </button>
       <a class="link-colab" onclick="abrirColabPublico()">
         <svg class="rocket-icon sm" viewBox="0 0 120 120"><use href="#rocket-svg"/></svg>
@@ -1986,12 +1990,23 @@ async function fazerLogin(){
   const email = document.getElementById('loginUser').value.trim();
   const senha = document.getElementById('loginPass').value;
   const btnErro = document.getElementById('loginErro');
+  const btnLogin = document.getElementById('btnLogin');
+  const btnLabel = document.getElementById('loginBtnLabel');
+  const spinner = document.getElementById('loginSpinner');
+  if(btnLogin && btnLogin.disabled) return;
   btnErro.style.display = 'none';
+  if(btnLogin){ btnLogin.disabled = true; btnLogin.setAttribute('aria-busy','true'); }
+  if(btnLabel) btnLabel.textContent = 'Entrando…';
+  if(spinner) spinner.classList.remove('hidden');
   try{
     const perfil = await window.RandstadAuth.signIn(email, senha);
     await aplicarPerfilFirebase(perfil);
   }catch(error){
     exibirErroLogin(window.RandstadAuth.messageFor(error));
+  }finally{
+    if(btnLogin){ btnLogin.disabled = false; btnLogin.removeAttribute('aria-busy'); }
+    if(btnLabel) btnLabel.textContent = 'Acessar';
+    if(spinner) spinner.classList.add('hidden');
   }
 }
 async function logout(){
