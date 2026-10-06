@@ -1,0 +1,644 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function profilePath() {
+      return /databases/$(database)/documents/usuarios/$(request.auth.uid);
+    }
+
+    function hasProfile() {
+      return signedIn() && exists(profilePath());
+    }
+
+    function profile() {
+      return get(profilePath()).data;
+    }
+
+    function isManagerOrStock() {
+      return hasProfile()
+        && (profile().perfil == 'gestor' || profile().perfil == 'estoque');
+    }
+
+    function isDriver() {
+      return hasProfile() && profile().perfil == 'motorista';
+    }
+
+    function validPointId(pointId) {
+      return pointId in ['Aurora', 'Franco da Rocha', 'Barueri'];
+    }
+
+    function profilePointId() {
+      return profile().ponto == 'Vila Aurora' ? 'Aurora' : profile().ponto;
+    }
+
+    function isOwnPoint(pointId) {
+      return hasProfile()
+        && profile().perfil == 'ponto'
+        && profile().keys().hasAny(['ponto'])
+        && profilePointId() in ['Aurora', 'Franco da Rocha', 'Barueri']
+        && profilePointId() == pointId;
+    }
+
+    function driverMayReadPoint(pointId) {
+      return isDriver()
+        && (!profile().keys().hasAny(['ponto'])
+          || (profilePointId() in ['Aurora', 'Franco da Rocha', 'Barueri']
+            && profilePointId() == pointId));
+    }
+
+    function canReadProducts() {
+      return isManagerOrStock()
+        || (hasProfile() && profile().perfil == 'ponto');
+    }
+
+    function validProduct(data, productId) {
+      return data.keys().hasAll(['codigo', 'descricao', 'cliente', 'productKey'])
+        && data.keys().hasOnly(['codigo', 'descricao', 'cliente', 'productKey'])
+        && data.codigo is string
+        && data.codigo.size() > 0
+        && data.codigo.size() <= 200
+        && data.descricao is string
+        && data.descricao.size() > 0
+        && data.descricao.size() <= 5000
+        && data.cliente in ['Shopee', 'Mercado Livre']
+        && data.productKey is string
+        && data.productKey == productId;
+    }
+
+    function validPointRecord(data, pointId) {
+      return validPointId(pointId)
+        && data.keys().hasAll(['ponto', 'volumes'])
+        && data.keys().hasOnly(['ponto', 'volumes'])
+        && data.ponto is string
+        && data.ponto == pointId
+        && data.volumes is int
+        && data.volumes >= 0;
+    }
+
+    function validImportHistory(data, importId) {
+      return importId.matches('^[A-Za-z0-9_-]{20,40}$')
+        && data.keys().hasAll([
+          'versao', 'tipo', 'operadorUid', 'status', 'dataHora',
+          'totalLinhas', 'linhasGravadas', 'linhasRevisao', 'linhasInvalidas'
+        ])
+        && data.keys().hasOnly([
+          'versao', 'tipo', 'operadorUid', 'status', 'dataHora',
+          'totalLinhas', 'linhasGravadas', 'linhasRevisao', 'linhasInvalidas'
+        ])
+        && data.versao == 1
+        && data.tipo in ['colaboradores', 'produtos']
+        && data.operadorUid is string
+        && data.operadorUid.size() > 0
+        && data.operadorUid.size() <= 128
+        && data.status == 'concluida'
+        && data.dataHora is timestamp
+        && data.totalLinhas is int
+        && data.totalLinhas >= 0
+        && data.totalLinhas <= 20000
+        && data.linhasGravadas is int
+        && data.linhasGravadas >= 0
+        && data.linhasGravadas <= (data.tipo == 'colaboradores' ? 400 : 500)
+        && data.linhasRevisao is int
+        && data.linhasRevisao >= 0
+        && data.linhasInvalidas is int
+        && data.linhasInvalidas >= 0
+        && data.linhasGravadas + data.linhasRevisao + data.linhasInvalidas == data.totalLinhas;
+    }
+
+    function canAllocateProtocol() {
+      return isManagerOrStock()
+        || (hasProfile()
+          && profile().perfil == 'ponto'
+          && profile().keys().hasAny(['ponto'])
+          && profilePointId() in ['Aurora', 'Franco da Rocha', 'Barueri']);
+    }
+
+    function isOwnClient(client) {
+      return hasProfile()
+        && profile().perfil == 'cliente'
+        && profile().keys().hasAny(['cliente'])
+        && client == profile().cliente
+        && client in ['Shopee', 'Mercado Livre'];
+    }
+
+    function mayReadScoped(data) {
+      return isManagerOrStock()
+        || isOwnPoint(data.ponto)
+        || isOwnClient(data.cliente);
+    }
+
+    function validCollaboratorId(collaboratorId) {
+      return collaboratorId.matches('^colab_[A-Za-z0-9_-]{20,40}$');
+    }
+
+    function validReturnId(returnId) {
+      return returnId.matches('^return_[A-Za-z0-9_-]{20,40}$');
+    }
+
+    function validCollaborator(data, collaboratorId) {
+      return validCollaboratorId(collaboratorId)
+        && data.keys().hasAll(['nome', 'cpf', 'telefone', 'ponto', 'cliente', 'status'])
+        && data.keys().hasOnly([
+          'nome', 'cpf', 'telefone', 'email', 'ponto', 'cliente', 'status',
+          'volumes', 'dataInsercao', 'dataInsercaoISO', 'origem', 'codigoProtocolo',
+          'ultimoReturnId'
+        ])
+        && data.nome is string
+        && data.nome.size() > 0
+        && data.cpf is string
+        && data.cpf.size() > 0
+        && data.cpf.size() <= 20
+        && data.telefone is string
+        && data.ponto is string
+        && validPointId(data.ponto)
+        && data.cliente in ['', 'Shopee', 'Mercado Livre']
+        && data.status in ['aguardando', 'devolvido', 'coletado']
+        && (!data.keys().hasAny(['email']) || data.email is string)
+        && (!data.keys().hasAny(['volumes']) || (data.volumes is int && data.volumes >= 0))
+        && (!data.keys().hasAny(['dataInsercao']) || data.dataInsercao is string)
+        && (!data.keys().hasAny(['dataInsercaoISO']) || data.dataInsercaoISO is string)
+        && (!data.keys().hasAny(['origem']) || data.origem is string)
+        && (!data.keys().hasAny(['codigoProtocolo']) || data.codigoProtocolo is string)
+        && (!data.keys().hasAny(['ultimoReturnId']) || validReturnId(data.ultimoReturnId));
+    }
+
+    function validReturn(data, returnId) {
+      return validReturnId(returnId)
+        && data.keys().hasAll([
+          'cpf', 'nome', 'telefone', 'ponto', 'cliente', 'quantidadeLinhas', 'volumes',
+          'codigoUnico', 'dataHora', 'coletado', 'colaboradorId',
+          'protocoloDia', 'protocoloSequencia'
+        ])
+        && data.keys().hasOnly([
+          'cpf', 'nome', 'telefone', 'ponto', 'cliente', 'quantidadeLinhas', 'volumes',
+          'codigoUnico', 'dataHora', 'coletado', 'colaboradorId',
+          'protocoloDia', 'protocoloSequencia'
+        ])
+        && data.cpf is string
+        && data.cpf.size() > 0
+        && data.cpf.size() <= 20
+        && data.nome is string
+        && data.nome.size() > 0
+        && data.telefone is string
+        && validPointId(data.ponto)
+        && data.cliente in ['Shopee', 'Mercado Livre']
+        && data.quantidadeLinhas is int
+        && data.quantidadeLinhas >= 1
+        && data.quantidadeLinhas <= 100
+        && data.volumes is int
+        && data.volumes >= 0
+        && data.codigoUnico is string
+        && data.codigoUnico.matches('^[A-Z]{2}[0-9]{6}[0-9]{4,}$')
+        && data.dataHora is string
+        && data.coletado is bool
+        && validCollaboratorId(data.colaboradorId)
+        && data.protocoloDia is string
+        && data.protocoloDia.matches('^[0-9]{6}$')
+        && data.protocoloSequencia is int
+        && data.protocoloSequencia >= 1;
+    }
+
+    function validQueueRecordFields(data) {
+      return data.keys().hasAll([
+          'returnId', 'ponto', 'cliente', 'quantidadeLinhas',
+          'status', 'coletaId', 'criadoEm', 'coletadoEm'
+        ])
+        && data.keys().hasOnly([
+          'returnId', 'ponto', 'cliente', 'quantidadeLinhas',
+          'status', 'coletaId', 'criadoEm', 'coletadoEm'
+        ])
+        && data.returnId is string
+        && validReturnId(data.returnId)
+        && validPointId(data.ponto)
+        && data.cliente in ['Shopee', 'Mercado Livre']
+        && data.quantidadeLinhas is int
+        && data.quantidadeLinhas >= 1
+        && data.quantidadeLinhas <= 100
+        && data.status in ['pendente', 'coletado']
+        && data.coletaId is string
+        && data.criadoEm is timestamp
+        && ((data.status == 'pendente'
+              && data.coletaId == ''
+              && data.coletadoEm == null)
+            || (data.status == 'coletado'
+              && data.coletaId == data.returnId
+              && data.coletadoEm is timestamp));
+    }
+
+    function validQueueRecord(data, returnId) {
+      return validReturnId(returnId)
+        && validQueueRecordFields(data)
+        && data.returnId == returnId;
+    }
+
+    function validQueueItemFields(data) {
+      return data.keys().hasAll(['codigo', 'descricao', 'qtd'])
+        && data.keys().hasOnly(['codigo', 'descricao', 'qtd'])
+        && data.codigo is string
+        && data.codigo.size() > 0
+        && data.codigo.size() <= 200
+        && data.descricao is string
+        && data.descricao.size() > 0
+        && data.descricao.size() <= 5000
+        && data.qtd is int
+        && data.qtd >= 1
+        && data.qtd <= 9007199254740991;
+    }
+
+    function validQueueItem(data, itemId) {
+      return itemId.matches('^item_0[0-9]{2}$')
+        && validQueueItemFields(data);
+    }
+
+    function queueDocumentPath(returnId) {
+      return /databases/$(database)/documents/filaColetas/$(returnId);
+    }
+
+    function mayReadQueueItems(data) {
+      return isManagerOrStock()
+        || isOwnPoint(data.ponto)
+        || isOwnClient(data.cliente)
+        || driverMayReadPoint(data.ponto);
+    }
+
+    function validCollectionReceipt(data, returnId) {
+      return validReturnId(returnId)
+        && data.keys().hasAll([
+          'returnId', 'ponto', 'cliente', 'quantidadeLinhasColetadas',
+          'devolucoesColetadas', 'status', 'concluidaEm'
+        ])
+        && data.keys().hasOnly([
+          'returnId', 'ponto', 'cliente', 'quantidadeLinhasColetadas',
+          'devolucoesColetadas', 'status', 'concluidaEm'
+        ])
+        && data.returnId == returnId
+        && validPointId(data.ponto)
+        && data.cliente in ['Shopee', 'Mercado Livre']
+        && data.quantidadeLinhasColetadas is int
+        && data.quantidadeLinhasColetadas >= 1
+        && data.quantidadeLinhasColetadas <= 100
+        && data.devolucoesColetadas == 1
+        && data.status == 'concluida'
+        && data.concluidaEm is timestamp;
+    }
+
+    function validProtocolCode(code) {
+      return code is string && code.matches('^[A-Z]{2}[0-9]{6}[0-9]{4,}$');
+    }
+
+    function validSequenceData(data, dateKey) {
+      return dateKey.matches('^[0-9]{6}$')
+        && data.keys().hasAll(['dateKey', 'value', 'returnId', 'codigoUnico', 'colaboradorId'])
+        && data.keys().hasOnly(['dateKey', 'value', 'returnId', 'codigoUnico', 'colaboradorId'])
+        && data.dateKey == dateKey
+        && data.value is int
+        && data.value >= 1
+        && validReturnId(data.returnId)
+        && validCollaboratorId(data.colaboradorId)
+        && validProtocolCode(data.codigoUnico);
+    }
+
+    function validProtocolClaim(data, protocolCode) {
+      return validProtocolCode(protocolCode)
+        && data.keys().hasAll(['returnId', 'dateKey', 'value', 'colaboradorId'])
+        && data.keys().hasOnly(['returnId', 'dateKey', 'value', 'colaboradorId'])
+        && validReturnId(data.returnId)
+        && data.dateKey is string
+        && data.dateKey.matches('^[0-9]{6}$')
+        && data.value is int
+        && data.value >= 1
+        && validCollaboratorId(data.colaboradorId);
+    }
+
+    function sequenceHasAtomicReturn(data, dateKey) {
+      let returnPath = /databases/$(database)/documents/devolucoes/$(data.returnId);
+      let protocolPath = /databases/$(database)/documents/protocolos/$(data.codigoUnico);
+      return !exists(returnPath)
+        && existsAfter(returnPath)
+        && getAfter(returnPath).data.protocoloDia == dateKey
+        && getAfter(returnPath).data.protocoloSequencia == data.value
+        && getAfter(returnPath).data.codigoUnico == data.codigoUnico
+        && getAfter(returnPath).data.colaboradorId == data.colaboradorId
+        && !exists(protocolPath)
+        && existsAfter(protocolPath)
+        && getAfter(protocolPath).data.returnId == data.returnId
+        && getAfter(protocolPath).data.dateKey == dateKey
+        && getAfter(protocolPath).data.value == data.value
+        && getAfter(protocolPath).data.colaboradorId == data.colaboradorId;
+    }
+
+    function returnHasAtomicWrites(data, returnId) {
+      let sequencePath = /databases/$(database)/documents/sequenciais/$(data.protocoloDia);
+      let collaboratorPath = /databases/$(database)/documents/colaboradores/$(data.colaboradorId);
+      let protocolPath = /databases/$(database)/documents/protocolos/$(data.codigoUnico);
+      let queuePath = /databases/$(database)/documents/filaColetas/$(returnId);
+      return existsAfter(sequencePath)
+        && getAfter(sequencePath).data.dateKey == data.protocoloDia
+        && getAfter(sequencePath).data.value == data.protocoloSequencia
+        && getAfter(sequencePath).data.returnId == returnId
+        && getAfter(sequencePath).data.codigoUnico == data.codigoUnico
+        && getAfter(sequencePath).data.colaboradorId == data.colaboradorId
+        && ((!exists(sequencePath) && data.protocoloSequencia == 1)
+          || (exists(sequencePath)
+            && getAfter(sequencePath).data.value == get(sequencePath).data.value + 1))
+        && !exists(protocolPath)
+        && existsAfter(protocolPath)
+        && getAfter(protocolPath).data.returnId == returnId
+        && getAfter(protocolPath).data.dateKey == data.protocoloDia
+        && getAfter(protocolPath).data.value == data.protocoloSequencia
+        && getAfter(protocolPath).data.colaboradorId == data.colaboradorId
+        && exists(collaboratorPath)
+        && get(collaboratorPath).data.status == 'aguardando'
+        && get(collaboratorPath).data.nome == data.nome
+        && get(collaboratorPath).data.telefone == data.telefone
+        && get(collaboratorPath).data.cpf == data.cpf
+        && get(collaboratorPath).data.ponto == data.ponto
+        && (get(collaboratorPath).data.cliente == data.cliente
+          || get(collaboratorPath).data.cliente == '')
+        && existsAfter(collaboratorPath)
+        && getAfter(collaboratorPath).data.status == 'devolvido'
+        && getAfter(collaboratorPath).data.ultimoReturnId == returnId
+        // Keep the copied PII identical both before and after the linked transition.
+        && getAfter(collaboratorPath).data.nome == data.nome
+        && getAfter(collaboratorPath).data.telefone == data.telefone
+        && getAfter(collaboratorPath).data.ponto == data.ponto
+        && getAfter(collaboratorPath).data.cliente == data.cliente
+        && getAfter(collaboratorPath).data.cpf == data.cpf
+        && !exists(queuePath)
+        && existsAfter(queuePath)
+        && validQueueRecord(getAfter(queuePath).data, returnId)
+        && getAfter(queuePath).data.ponto == data.ponto
+        && getAfter(queuePath).data.cliente == data.cliente
+        && getAfter(queuePath).data.quantidadeLinhas == data.quantidadeLinhas;
+    }
+
+    function managerCompletesFirstReturn(collaboratorId) {
+      let returnPath = /databases/$(database)/documents/devolucoes/$(request.resource.data.ultimoReturnId);
+      return resource.data.status == 'aguardando'
+        && !resource.data.keys().hasAny(['ultimoReturnId', 'codigoProtocolo'])
+        && request.resource.data.status == 'devolvido'
+        && !request.resource.data.keys().hasAny(['codigoProtocolo'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'ultimoReturnId', 'cliente'
+        ])
+        && validReturnId(request.resource.data.ultimoReturnId)
+        && !exists(returnPath)
+        && existsAfter(returnPath)
+        && getAfter(returnPath).data.colaboradorId == collaboratorId
+        && getAfter(returnPath).data.ponto == request.resource.data.ponto
+        && getAfter(returnPath).data.cliente == request.resource.data.cliente
+        && getAfter(returnPath).data.cpf == request.resource.data.cpf
+        && getAfter(returnPath).data.nome == request.resource.data.nome
+        && getAfter(returnPath).data.telefone == request.resource.data.telefone;
+    }
+
+    function managerMayUpdateCollaborator(collaboratorId) {
+      let pendingUnlinked = resource.data.status == 'aguardando'
+        && !resource.data.keys().hasAny(['ultimoReturnId', 'codigoProtocolo']);
+      return (pendingUnlinked
+          && request.resource.data.status == 'aguardando'
+          && !request.resource.data.keys().hasAny(['ultimoReturnId'])
+          && request.resource.data.cpf == resource.data.cpf
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'nome', 'telefone', 'email', 'cliente', 'ponto'
+          ]))
+        || managerCompletesFirstReturn(collaboratorId);
+    }
+
+    function pointMayAssignClient() {
+      return resource.data.status == 'aguardando'
+        && !resource.data.keys().hasAny(['ultimoReturnId', 'codigoProtocolo'])
+        && isOwnPoint(resource.data.ponto)
+        && isOwnPoint(request.resource.data.ponto)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['cliente'])
+        && request.resource.data.status == 'aguardando'
+        && !request.resource.data.keys().hasAny(['ultimoReturnId'])
+        && resource.data.cliente == ''
+        && request.resource.data.cliente in ['Shopee', 'Mercado Livre'];
+    }
+
+    function pointMayRegisterReturn(collaboratorId) {
+      let returnPath = /databases/$(database)/documents/devolucoes/$(request.resource.data.ultimoReturnId);
+      return isOwnPoint(resource.data.ponto)
+        && isOwnPoint(request.resource.data.ponto)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'cliente', 'status', 'ultimoReturnId'
+        ])
+        && resource.data.status == 'aguardando'
+        && !resource.data.keys().hasAny(['ultimoReturnId', 'codigoProtocolo'])
+        && request.resource.data.status == 'devolvido'
+        && (resource.data.cliente == request.resource.data.cliente
+          || (resource.data.cliente == ''
+            && request.resource.data.cliente in ['Shopee', 'Mercado Livre']))
+        && validReturnId(request.resource.data.ultimoReturnId)
+        && !exists(returnPath)
+        && existsAfter(returnPath)
+        && getAfter(returnPath).data.colaboradorId == collaboratorId
+        && getAfter(returnPath).data.ponto == request.resource.data.ponto
+        && getAfter(returnPath).data.cliente == request.resource.data.cliente
+        && getAfter(returnPath).data.cpf == request.resource.data.cpf;
+    }
+
+    function pointMayUpdateCollaborator(collaboratorId) {
+      return pointMayAssignClient() || pointMayRegisterReturn(collaboratorId);
+    }
+
+    match /usuarios/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+    }
+
+    match /produtos/{productId} {
+      allow get: if canReadProducts() && validProduct(resource.data, productId);
+      allow list: if canReadProducts();
+      allow create: if isManagerOrStock()
+        && validProduct(request.resource.data, productId)
+        && !exists(/databases/$(database)/documents/produtos/$(productId));
+      allow update: if isManagerOrStock()
+        && validProduct(resource.data, productId)
+        && validProduct(request.resource.data, productId)
+        && request.resource.data.productKey == resource.data.productKey
+        && request.resource.data.codigo == resource.data.codigo
+        && request.resource.data.cliente == resource.data.cliente
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['descricao']);
+      allow delete: if isManagerOrStock();
+    }
+
+    match /pontos/{pointId} {
+      allow get: if validPointId(pointId)
+        && (isManagerOrStock() || isOwnPoint(pointId) || driverMayReadPoint(pointId))
+        && (!exists(/databases/$(database)/documents/pontos/$(pointId))
+          || validPointRecord(resource.data, pointId));
+      allow list: if false;
+      allow create: if isManagerOrStock()
+        && validPointRecord(request.resource.data, pointId);
+      allow update: if validPointRecord(resource.data, pointId)
+        && validPointRecord(request.resource.data, pointId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['volumes'])
+        && (isManagerOrStock() || isOwnPoint(pointId));
+      allow delete: if false;
+    }
+
+    match /colaboradores/{collaboratorId} {
+      allow get: if validCollaborator(resource.data, collaboratorId)
+        && mayReadScoped(resource.data);
+      // Rules are not post-query filters. Preserve manager-wide and
+      // point/client-scoped queries; validate schema on writes and direct gets.
+      // Audit/normalize legacy records before ever enabling these rules.
+      allow list: if mayReadScoped(resource.data);
+      allow create: if isManagerOrStock()
+        && validCollaborator(request.resource.data, collaboratorId)
+        && request.resource.data.status == 'aguardando'
+        && !request.resource.data.keys().hasAny(['ultimoReturnId', 'codigoProtocolo']);
+      allow update: if validCollaborator(request.resource.data, collaboratorId)
+        && ((isManagerOrStock() && managerMayUpdateCollaborator(collaboratorId))
+          || pointMayUpdateCollaborator(collaboratorId));
+      // Preserve canonical identity documents; possible duplicates are reviewed
+      // and removed only in the separate agendamentos intake collection.
+      allow delete: if false;
+    }
+
+    match /sequenciais/{dateKey} {
+      allow get: if canAllocateProtocol();
+      allow create: if canAllocateProtocol()
+        && validSequenceData(request.resource.data, dateKey)
+        && request.resource.data.value == 1
+        && sequenceHasAtomicReturn(request.resource.data, dateKey);
+      allow update: if canAllocateProtocol()
+        && validSequenceData(request.resource.data, dateKey)
+        && request.resource.data.dateKey == resource.data.dateKey
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'value', 'returnId', 'codigoUnico', 'colaboradorId'
+        ])
+        && request.resource.data.value == resource.data.value + 1
+        && sequenceHasAtomicReturn(request.resource.data, dateKey);
+      allow delete: if false;
+    }
+
+    match /protocolos/{protocolCode} {
+      // Immutable claim documents make a visible protocol code single-use.
+      allow create: if canAllocateProtocol()
+        && validProtocolClaim(request.resource.data, protocolCode)
+        && !exists(/databases/$(database)/documents/protocolos/$(protocolCode))
+        && existsAfter(/databases/$(database)/documents/devolucoes/$(request.resource.data.returnId))
+        && getAfter(/databases/$(database)/documents/devolucoes/$(request.resource.data.returnId)).data.codigoUnico == protocolCode
+        && getAfter(/databases/$(database)/documents/devolucoes/$(request.resource.data.returnId)).data.protocoloDia == request.resource.data.dateKey
+        && getAfter(/databases/$(database)/documents/devolucoes/$(request.resource.data.returnId)).data.protocoloSequencia == request.resource.data.value
+        && getAfter(/databases/$(database)/documents/devolucoes/$(request.resource.data.returnId)).data.colaboradorId == request.resource.data.colaboradorId
+        && getAfter(/databases/$(database)/documents/sequenciais/$(request.resource.data.dateKey)).data.returnId == request.resource.data.returnId
+        && getAfter(/databases/$(database)/documents/sequenciais/$(request.resource.data.dateKey)).data.codigoUnico == protocolCode
+        && getAfter(/databases/$(database)/documents/sequenciais/$(request.resource.data.dateKey)).data.value == request.resource.data.value
+        && getAfter(/databases/$(database)/documents/sequenciais/$(request.resource.data.dateKey)).data.colaboradorId == request.resource.data.colaboradorId;
+    }
+
+    match /devolucoes/{returnId} {
+      allow get: if validReturn(resource.data, returnId)
+        && mayReadScoped(resource.data);
+      allow list: if mayReadScoped(resource.data);
+      allow create: if (isManagerOrStock() || isOwnPoint(request.resource.data.ponto))
+        && validReturn(request.resource.data, returnId)
+        && request.resource.data.coletado == false
+        && returnHasAtomicWrites(request.resource.data, returnId);
+      // Returns are immutable history. Collection state lives in the separate
+      // sanitized queue/receipt path; edits and hard deletes would desynchronize it.
+      allow update, delete: if false;
+    }
+
+    match /filaColetas/{returnId} {
+      allow get: if validQueueRecord(resource.data, returnId)
+        && (isManagerOrStock() || isOwnPoint(resource.data.ponto)
+          || driverMayReadPoint(resource.data.ponto));
+      // Rules are not post-query filters. Schema is enforced on creation/update;
+      // callers must query only rows in their authorized role/point scope.
+      allow list: if isManagerOrStock() || isOwnPoint(resource.data.ponto)
+        || driverMayReadPoint(resource.data.ponto);
+      allow create: if (isManagerOrStock() || isOwnPoint(request.resource.data.ponto))
+        && validQueueRecord(request.resource.data, returnId)
+        && request.resource.data.status == 'pendente'
+        && !exists(/databases/$(database)/documents/filaColetas/$(returnId))
+        && !exists(/databases/$(database)/documents/devolucoes/$(returnId))
+        && existsAfter(/databases/$(database)/documents/devolucoes/$(returnId))
+        && getAfter(/databases/$(database)/documents/devolucoes/$(returnId)).data.ponto == request.resource.data.ponto
+        && getAfter(/databases/$(database)/documents/devolucoes/$(returnId)).data.cliente == request.resource.data.cliente
+        && getAfter(/databases/$(database)/documents/devolucoes/$(returnId)).data.quantidadeLinhas == request.resource.data.quantidadeLinhas;
+      allow update: if (isManagerOrStock() || driverMayReadPoint(resource.data.ponto))
+        && validQueueRecord(resource.data, returnId)
+        && validQueueRecord(request.resource.data, returnId)
+        && resource.data.status == 'pendente'
+        && request.resource.data.status == 'coletado'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'coletaId', 'coletadoEm'
+        ])
+        && request.resource.data.coletaId == returnId
+        && !exists(/databases/$(database)/documents/coletasDevolucoes/$(returnId))
+        && existsAfter(/databases/$(database)/documents/coletasDevolucoes/$(returnId))
+        && validCollectionReceipt(
+          getAfter(/databases/$(database)/documents/coletasDevolucoes/$(returnId)).data,
+          returnId
+        )
+        && getAfter(/databases/$(database)/documents/coletasDevolucoes/$(returnId)).data.ponto == request.resource.data.ponto
+        && getAfter(/databases/$(database)/documents/coletasDevolucoes/$(returnId)).data.cliente == request.resource.data.cliente
+        && getAfter(/databases/$(database)/documents/coletasDevolucoes/$(returnId)).data.quantidadeLinhasColetadas == request.resource.data.quantidadeLinhas;
+      allow delete: if false;
+    }
+
+    match /filaColetas/{returnId}/itens/{itemId} {
+      allow get: if validQueueItem(resource.data, itemId)
+        && exists(queueDocumentPath(returnId))
+        && validQueueRecord(get(queueDocumentPath(returnId)).data, returnId)
+        && mayReadQueueItems(get(queueDocumentPath(returnId)).data);
+      // Child writes enforce this exact schema and children cannot be changed;
+      // list authorization is based on the immutable parent scope, not a filter.
+      allow list: if exists(queueDocumentPath(returnId))
+        && validQueueRecord(get(queueDocumentPath(returnId)).data, returnId)
+        && mayReadQueueItems(get(queueDocumentPath(returnId)).data);
+      allow create: if validQueueItem(request.resource.data, itemId)
+        && !exists(queueDocumentPath(returnId))
+        && existsAfter(queueDocumentPath(returnId))
+        && validQueueRecord(getAfter(queueDocumentPath(returnId)).data, returnId)
+        && getAfter(queueDocumentPath(returnId)).data.status == 'pendente'
+        && (isManagerOrStock()
+          || isOwnPoint(getAfter(queueDocumentPath(returnId)).data.ponto));
+      allow update, delete: if false;
+    }
+
+    match /coletasDevolucoes/{returnId} {
+      // A driver/manager transaction must read a missing deterministic receipt
+      // before creating it; existing receipts still require schema and scope.
+      allow get: if (isManagerOrStock() || isDriver())
+        && (!exists(/databases/$(database)/documents/coletasDevolucoes/$(returnId))
+          || (validCollectionReceipt(resource.data, returnId)
+            && (isManagerOrStock() || driverMayReadPoint(resource.data.ponto))));
+      allow list: if false;
+      allow create: if (isManagerOrStock() || driverMayReadPoint(request.resource.data.ponto))
+        && validCollectionReceipt(request.resource.data, returnId)
+        && !exists(/databases/$(database)/documents/coletasDevolucoes/$(returnId))
+        && exists(/databases/$(database)/documents/filaColetas/$(returnId))
+        && get(/databases/$(database)/documents/filaColetas/$(returnId)).data.status == 'pendente'
+        && existsAfter(/databases/$(database)/documents/filaColetas/$(returnId))
+        && getAfter(/databases/$(database)/documents/filaColetas/$(returnId)).data.status == 'coletado'
+        && getAfter(/databases/$(database)/documents/filaColetas/$(returnId)).data.coletaId == returnId
+        && getAfter(/databases/$(database)/documents/filaColetas/$(returnId)).data.ponto == request.resource.data.ponto
+        && getAfter(/databases/$(database)/documents/filaColetas/$(returnId)).data.cliente == request.resource.data.cliente
+        && getAfter(/databases/$(database)/documents/filaColetas/$(returnId)).data.quantidadeLinhas == request.resource.data.quantidadeLinhasColetadas;
+      allow update, delete: if false;
+    }
+
+    match /importacoes/{importId} {
+      allow get, list: if isManagerOrStock() && validImportHistory(resource.data, importId);
+      allow create: if isManagerOrStock()
+        && validImportHistory(request.resource.data, importId)
+        && request.resource.data.operadorUid == request.auth.uid
+        && request.resource.data.dataHora == request.time;
+      allow update, delete: if false;
+    }
+
+    // Drivers have only the sanitized queue/receipt projection, never PII.
+    // Public-form and unrelated collections have no grant in this draft.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
