@@ -1,0 +1,19 @@
+{
+  "name": "randstad-public-intake-rules-draft-tests",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Isolated local Firestore Emulator tests for an unselected public-intake rules draft; never deploy.",
+  "scripts": {
+    "check:isolation": "node tools/check-emulator-isolation.js",
+    "test:rules": "node --test tests/firestore.server-intake.rules.test.js",
+    "test:rules:emulator": "npm run check:isolation && firebase --config firebase.server-intake.emulator.json emulators:exec --only firestore --project demo-randstad-rules-test \"npm run test:rules\""
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "4.0.1",
+    "firebase": "11.10.0",
+    "firebase-tools": "14.7.0"
+  }
+}
