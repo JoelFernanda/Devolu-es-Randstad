@@ -1,0 +1,27 @@
+// DRAFT FOR ISOLATED EMULATOR TESTS ONLY. Never deploy this partial ruleset.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function managerPath() { return /databases/$(database)/documents/usuarios/$(request.auth.uid); }
+    function isManager() {
+      return signedIn() && exists(managerPath()) && get(managerPath()).data.perfil == 'gestor';
+    }
+
+    // Server/Admin SDK only for create and CPF claims. No client can access claims.
+    match /intakeCpfClaims/{claimId} {
+      allow read, write: if false;
+    }
+
+    // Partial test rule: manager can inspect submissions; all client writes denied.
+    // Do not deploy: this file does not include the rest of the app's permissions.
+    match /agendamentos/{submissionId} {
+      allow get, list: if isManager();
+      allow create, update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
