@@ -1,0 +1,46 @@
+name: Isolated public-intake Rules tests
+
+on:
+  push:
+    paths:
+      - 'public-intake-backend-prototype/**'
+      - '.github/workflows/public-intake-rules-emulator.yml'
+  pull_request:
+    paths:
+      - 'public-intake-backend-prototype/**'
+      - '.github/workflows/public-intake-rules-emulator.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-intake-rules-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  firestore-emulator:
+    name: Draft Rules on local Emulator only
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: public-intake-backend-prototype
+    steps:
+      - name: Check out repository (read-only)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Set up Java for Firestore Emulator
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated test dependencies
+        run: npm install --no-audit --no-fund
+      - name: Verify demo-only isolation and run Rules tests
+        run: npm run test:rules:emulator
