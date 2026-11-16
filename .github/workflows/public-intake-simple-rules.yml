@@ -1,0 +1,46 @@
+name: Isolated simple-intake Rules tests
+
+on:
+  push:
+    paths:
+      - 'public-intake-simple-proposal-20261116/**'
+      - '.github/workflows/public-intake-simple-rules.yml'
+  pull_request:
+    paths:
+      - 'public-intake-simple-proposal-20261116/**'
+      - '.github/workflows/public-intake-simple-rules.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: simple-intake-rules-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  firestore-emulator:
+    name: Candidate Rules on demo Emulator only
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: public-intake-simple-proposal-20261116
+    steps:
+      - name: Check out repository (read-only)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Set up Java for Firestore Emulator
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated test dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run candidate Rules tests on local Emulator
+        run: npm run test:rules:emulator
