@@ -1,0 +1,16 @@
+{
+  "name": "randstad-simple-public-intake-rules-test",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Isolated Firestore Emulator tests for a direct-create intake rules proposal; never deploy.",
+  "scripts": {
+    "test:rules": "node --test tests/firestore.simple-intake.rules.test.cjs",
+    "test:rules:emulator": "firebase --config firebase.simple-intake.emulator.json emulators:exec --only firestore --project demo-randstad-simple-intake \"npm run test:rules\""
+  },
+  "engines": {"node": ">=20"},
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "4.0.1",
+    "firebase": "11.10.0",
+    "firebase-tools": "14.7.0"
+  }
+}
